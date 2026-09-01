@@ -31,6 +31,22 @@ export BINANCE_PROXY=http://127.0.0.1:7897
 
 首次使用前：`binance-cli profile create` 配置 API 密钥（profile `my-main`）。
 
+## 依赖与环境要求
+
+| 依赖 | 版本 / 来源 | 作用 | 安装方式 |
+|---|---|---|---|
+| Node.js | ≥ 26（脚本依赖内置 `node:sqlite`） | 所有 scripts + MCP server 的运行时 | 官网 installer，或 `winget install OpenJS.NodeJS.LTS` / nvm-windows |
+| curl | Windows 10 1803+ 自带（`System32\curl.exe`） | 脚本/MCP 访问 `fapi.binance.com` | 无需安装（系统自带） |
+| /binance skill | 最新 | **强依赖**：数据/执行层（binance-cli 端点字典、认证规则） | `npx skills add binance/binance-skills-hub` |
+| binance-cli | npm v1.3.0（**仅 Windows npm 版**，官方安装脚本不兼容 Windows） | 签名账户查询 / 下单执行 | `npm install -g @binance/binance-cli` |
+| Binance API 密钥 | profile `my-main` | 签名请求鉴权（只在 `binance-cli` 里配置，勿写进代码） | `binance-cli profile create` → 填 API Key / Secret |
+| 本地代理 | `127.0.0.1:7897`（Clash 等） | 直连币安被墙时走代理 | `export BINANCE_PROXY=http://127.0.0.1:7897`（另设 `HTTPS_PROXY`/`HTTP_PROXY` 给 binance-cli） |
+| 数据层 | `D:\trade`（可覆盖） | SQLite（`data/trade.db`）+ 复盘归档（`retrospectives/`） | `export TRADE_HOME=D:/trade`（目录可自动创建） |
+
+**向量检索（`vector.mjs`）零外部依赖**：不是外部向量数据库，是本地 BM25 检索（中文字符 bigram 分词 + 倒排索引），纯 Node 实现。**无需安装任何数据库、无需 API key、无需外部模型**；索引自动构建到 `${TRADE_HOME}/vector-index.json`（`D:/trade/vector-index.json`），源文件变化时自动重建。详见 [向量检索](docs/vector-search.md)。
+
+**可选依赖（binance-orchestrator 增强）**：信息面 / 信号 / 博弈面 / 链上查询走 `crypto-market-rank`、`binance-trading-signal`、`binance-wallet-tracker`、`query-token-*` 等用户级 skill，按各 skill 的安装方式（通常 `npx skills add <org>/<repo>`）安装；缺失时 orchestrator 会降级提示，不影响核心 skill/MCP。
+
 ## 组件
 
 ```

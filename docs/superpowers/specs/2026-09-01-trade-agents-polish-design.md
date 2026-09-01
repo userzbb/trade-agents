@@ -97,6 +97,13 @@
 
 每步 findings 回来 → 修复 → 进入下一步。子 agent 只读 + 建议，写操作由主会话执行（尊重 CONFIRM/授权边界）。
 
+### 3.8 README 依赖与环境要求说明（用户直接要求）
+
+- 主仓库 `README.md` 新增「依赖与环境要求」小节：Node ≥26（`node:sqlite`）、curl（系统自带）、/binance skill、binance-cli npm v1.3.0（仅 Windows npm 版）、Binance API 密钥（profile `my-main`）、本地代理 `:7897`、`TRADE_HOME` 数据层，逐项给安装/配置命令。
+- 明确说明 **向量检索零外部依赖**（非外部向量数据库，本地 BM25，无 API key / 无模型）。
+- 补充可选依赖（orchestrator 增强 skill）说明。
+- 检索方案维持 BM25 现状（用户已确认，不做语义向量/分块升级）。
+
 ### 3.7 收尾提交
 
 1. 全部测试 + `node --check` 全绿
@@ -119,4 +126,5 @@
 - [ ] evals 9 条，结构完整
 - [ ] 源/镜像 `diff -rq` 仅剩分发专属文件差异
 - [ ] `node --check` 全部脚本通过
+- [ ] 主 README 含完整「依赖与环境要求」小节（含向量检索零依赖说明）
 - [ ] agents repo 一次干净提交
