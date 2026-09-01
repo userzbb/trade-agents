@@ -12,7 +12,12 @@ npx skills add binance/binance-skills-hub
 ```
 
 ```bash
-# 推荐：经 GitHub marketplace
+# 本插件自带 skill：npx skills 直接装本插件仓库里的 skills/trade-assistant
+npx skills add userzbb/trade-agents
+```
+
+```bash
+# 推荐：经 GitHub marketplace（完整插件：skill + MCP + agents + 引擎桥）
 claude plugin marketplace add https://github.com/userzbb/trade-agents
 claude plugin install trade-agents
 ```
@@ -144,4 +149,4 @@ trade-agents/
 
 ## 同步规则
 
-skill 层唯一真相源在 `skills/trade-assistant/`。策略规则或 binance 决策表变更时：修改这里 → 同步镜像 `D:\claude-dev\skills\trade-assistant` → 检查 agents 引用。详见 [开发文档](docs/development.md) 与 [规范](docs/conventions.md)。
+skill 层唯一真相源在 `skills/trade-assistant/`（本插件仓库内）。策略规则或决策表变更时：直接改这里 → 检查 agents 引用即可。**旧镜像 `D:\claude-dev\skills\trade-assistant` 已弃用，不同步**。`npx skills add userzbb/trade-agents` 即从本插件仓库安装该 skill。详见 [开发文档](docs/development.md) 与 [规范](docs/conventions.md)。
