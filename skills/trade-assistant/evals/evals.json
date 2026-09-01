@@ -36,6 +36,30 @@
       "prompt": "查一下 BTC 的资金费率",
       "expected_output": "走 /binance 生态编排：binance-cli futures-usds 拉资金费率（带代理、限流纪律），中文表格汇总并标注数据来源；纯查询无需 CONFIRM；不做任何下单动作",
       "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "ARB 的技术面怎么样",
+      "expected_output": "运行 ta.mjs ARB（默认 1h，需注明所用周期），输出中文技术分析：动量(RSI/MACD柱)、趋势(EMA50/200、布林带位置)、背离、K线形态、综合研判评分；明确 TA 是第二道确认而非进场依据",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "帮我看看金字塔加仓这个币",
+      "expected_output": "运行 pyramid.mjs 输出加仓计划（分层入场/止损/资金分配），按 06 文件规则；展示完整计划 + 模式A/B 供用户选择，未获 CONFIRM 前不下单",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "写一下这个月的月报",
+      "expected_output": "运行 summary.mjs monthly 生成月报 md（win rate/回撤/分级归因），再跑 plan.mjs --target <目标U> --days <N> --equity <当前净值> 校验下期目标；给中文摘要并 git 归档到 D:/trade/retrospectives",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "看看 ARB 是吸筹还是派发",
+      "expected_output": "走 /binance 生态编排：binance-wallet-tracker 查 ARB 的吸筹/派发/round-trip/首动行为；中文表格汇总并标注来源；纯查询无需 CONFIRM",
+      "files": []
     }
   ]
 }

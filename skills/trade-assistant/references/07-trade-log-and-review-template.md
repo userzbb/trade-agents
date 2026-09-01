@@ -1,7 +1,7 @@
 # 07 Trade Log & Review Template (交易日志与复盘模板)
 
 > Content in English; **the document bodies below are user-facing output and MUST stay Chinese.**
-> Relationship: the trade log (06) records every trade's process (flows into SQLite); the review (07) is the **full per-trade review report**.
+> Relationship: the trade log (07 §1) records every trade's process (flows into SQLite); the review (07 §2) is the **full per-trade review report**.
 > Every trade must be logged; after 100 trades switch to Kelly sizing (ref 03); at month-end compute real win rate / payoff.
 
 ## 1. Per-Trade Log — Record Template (copy and fill in Chinese)

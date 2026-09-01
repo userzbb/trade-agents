@@ -1,6 +1,6 @@
 ---
 name: trade-assistant
-description: 币安 U 本位永续合约交易助手（D:\trade 项目），强依赖 /binance 生态。当用户提到 看盘、盘面、"现在呢"、持仓、挂单、下单、开仓、平仓、撤单、改单、止损、止盈、选币、做多、做空、合约、概率、胜率、爆仓、复盘、周报、月报、交易计划、收益目标、账户余额，或技术分析（RSI、MACD、均线、EMA、布林带、ATR、背离、金叉死叉、K线形态、动能分析、趋势研判），或任何涉及 binance-cli / 币安 U 本位合约 API / fapi.binance.com 的操作时，使用本 skill。Two pillars (A) 复盘/周报/月报 md 文档生成（4 类文档，用户触发）；(B) 辅助 /binance 生态调用编排（binance→行情/执行, crypto-market-rank→信息面, binance-trading-signal→信号/回测, binance-wallet-tracker→博弈面, query-token-*→链上）。分析脚本（scan/coin/ta/prob/solve/pyramid）为降级工具箱。所有写操作走 CONFIRM 审核协议。
+description: 币安 U 本位永续合约交易助手（D:\trade 项目），强依赖 /binance 生态。当用户提到 看盘、盘面、"现在呢"、持仓、挂单、下单、开仓、平仓、撤单、改单、止损、止盈、选币、做多、做空、合约、概率、胜率、爆仓、复盘、周报、月报、交易计划、收益目标、账户余额，或技术分析（RSI、MACD、均线、EMA、布林带、ATR、背离、金叉死叉、K线形态、动能分析、趋势研判），或任何涉及 binance-cli / 币安 U 本位合约 API / fapi.binance.com 的操作时，使用本 skill。Two pillars (A) 计划/复盘/周报/月报 md 文档生成（4 类文档，用户触发）；(B) 辅助 /binance 生态调用编排（binance→行情/执行, crypto-market-rank→信息面, binance-trading-signal→信号/回测, binance-wallet-tracker→博弈面, query-token-*→链上）。分析脚本（scan/coin/ta/prob/solve/pyramid）为降级工具箱。所有写操作走 CONFIRM 审核协议。
 ---
 
 # Trade Assistant — D:\trade project
@@ -60,7 +60,7 @@ This skill **strongly depends on the external `/binance` skill** (user-level, `n
 
 **Any WRITE operation (orders/leverage/transfers), regardless of data source, MUST pass through this skill's CONFIRM protocol.** If `/binance` is not installed: tell the user `npx skills add binance/binance-skills-hub` and what's unavailable.
 
-## Analysis Toolbox (scripts — secondary; zero-dep Node, auto proxy/retry/rate-limit)
+## Analysis Toolbox (scripts — secondary; zero-dep Node; network scripts auto proxy/retry/rate-limit, local SQLite/file tools need none)
 
 | Script | Purpose | When |
 |---|---|---|
@@ -75,6 +75,7 @@ This skill **strongly depends on the external `/binance` skill** (user-level, `n
 | `report.mjs [--days 30]` | P&L analysis: by coin/tier/big-loss/DD | "这周/这月表现"; review data source |
 | `plan.mjs --target X --days N --equity Y` | target math validation + 3 plans (A稳健/B延续/C激进) | "目标/多久赚 X"; monthly |
 | `summary.mjs weekly\|monthly` | 周报/月报 generator (auto md + archive) | Sundays / 1st; "周报/月报" |
+| `vector.mjs query "<text>" [--top N] [--filter review\|reference]` | local BM25 retrieval over retrospectives + strategy KB (no network) | 复盘相似案例; "找一下类似复盘" |
 
 Known issue: `position.mjs` can hang on proxy jitter (>60s no output → kill it); fallback: `export HTTPS_PROXY=... HTTP_PROXY=...` then manually `binance-cli futures-usds account-information-v2` with 2–4 retries.
 

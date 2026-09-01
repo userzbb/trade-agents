@@ -66,7 +66,7 @@ tools: ["Read", "Write", "Grep", "Glob", "Bash"]
 ### 关键路径
 
 - `TRADE_HOME` = `D:/trade`（env 可覆盖）；SQLite `data/trade.db`；归档 `retrospectives/`。
-- skill 根 = `D:\claude-dev\agents\skills\trade-assistant`（`TRADE_PLUGIN_ROOT` 可覆盖）。
+- skill 根 = `<skill-root>/skills/trade-assistant`（`<skill-root>` = `${TRADE_PLUGIN_ROOT}` 或 `D:/claude-dev/agents`）。
 - 向量检索：`node <skill>/scripts/vector.mjs query "<文本>" --filter review --top 5`。
 - 环境事实（代理/限流/时钟漂移）读 SKILL.md，不复制。
 
@@ -97,7 +97,7 @@ tools: ["Read", "Grep", "Glob", "Bash"]
 | 原始行情/K线/费率/多空比/持仓量/盘口/taker | `/binance`（binance-cli） | `binance-cli futures-usds <endpoint> --symbol <SYM> ...`（语法查 `/binance` references） |
 | 账户/持仓/挂单/流水 | `/binance` | `account-information-v2` / `position-risk` / `get-income-history` |
 | **下单/平仓/撤单/改杠杆/划转** | **交回 trade-assistant CONFIRM** | **不执行** —— 展示计划后转交 |
-| 信息面排名/热度/聪明钱流入/地址PnL榜 | `crypto-market-rank` | `node <skill>/scripts/cli.mjs <subcmd> '<json>'` |
+| 信息面排名/热度/聪明钱流入/地址PnL榜 | `crypto-market-rank` | 按运行时解析其 CLI（见 agent 的 Path Resolution），`node <market-rank-cli> <subcmd> '<json>'` |
 | 信号/回测/策略/可买性 | `binance-trading-signal` | `baw signal ...` |
 | 博弈面行为（吸筹/派发/round-trip/首动） | `binance-wallet-tracker` | `baw tracker ...` |
 | 链上 token/地址/审计 | `query-token-info` / `query-address-info` / `query-token-audit` | 读其 references + 跑 CLI |
@@ -118,6 +118,7 @@ tools: ["Read", "Grep", "Glob", "Bash"]
 - 调 binance-cli 前：`export HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897`
 - `binance-cli` Windows = npm v1.3.0，profile `my-main`（**不要**用 /binance skill 里的 v2 安装脚本，不支持 Windows）
 - 不并行调用币安 API。
+- 路径一律运行时解析（`TRADE_PLUGIN_ROOT`/`CRYPTO_MARKET_RANK_CLI` env 或读对应 skill），不写死绝对路径。
 
 ### 质量要求与边界
 

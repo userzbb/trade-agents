@@ -148,4 +148,4 @@ if (best.loss / equity > 0.06) {
   console.log(`  ✓ 符合红线的建议数量: ${maxQty} 张 (原 ${qty} 张, 仓位降至 ${(maxQty / qty * 100).toFixed(0)}%)`);
   console.log(`    缩仓后: 最大亏损 ${((entry * best.sd / 100) * maxQty).toFixed(1)}U | 止盈收益 ${((entry * best.td / 100) * maxQty).toFixed(1)}U`);
 }
-console.log('\n⚠ 免责: 庄家币上模型失效，概率仅供交叉验证，最终以 05 文档博弈论判断为准。');
+console.log('\n⚠ 免责: 庄家币上模型失效，概率仅供交叉验证，最终以 04 文档博弈论判断为准。');

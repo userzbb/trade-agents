@@ -68,7 +68,7 @@ if (Object.keys(tierMap).length) {
   Object.entries(tierMap).forEach(([t, v]) => {
     console.log(`  ${t}: 净${(v.realized - v.fees).toFixed(2)}U`);
   });
-  console.log('  → 若 T3 长期为负，说明庄家币在吃你的利润（05 文档：彩票仓收紧）');
+  console.log('  → 若 T3 长期为负，说明庄家币在吃你的利润（04 文档：彩票仓收紧）');
 }
 
 // --- 大额亏损单预警 ---

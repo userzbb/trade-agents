@@ -114,7 +114,7 @@ if (bigLoss.length) {
 }
 L.push('## 五、决策输入（供下期计划）');
 L.push('');
-L.push(`- T3 币种净盈亏 ${tierMap['T3'] !== undefined ? tierMap['T3'].toFixed(2) + 'U' : '无交易'}${tierMap['T3'] < 0 ? ' → 若持续为负，收紧彩票仓（05 文档）' : ''}`);
+L.push(`- T3 币种净盈亏 ${tierMap['T3'] !== undefined ? tierMap['T3'].toFixed(2) + 'U' : '无交易'}${tierMap['T3'] < 0 ? ' → 若持续为负，收紧彩票仓（04 文档）' : ''}`);
 L.push(`- 手续费占比: ${(Math.abs(totals.fees || 0) / Math.max(1, Math.abs(totals.realized || 1)) * 100).toFixed(1)}%（超过 15% 说明交易频率过高或止损太近）`);
 L.push(`- 盈利天占比 ${(daily.length ? ((posDays / daily.length) * 100).toFixed(0) : 0)}%，回撤 ${maxDD.toFixed(1)}U → 用 plan.mjs --target 重新校验下期目标`);
 L.push('');

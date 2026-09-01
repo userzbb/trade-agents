@@ -57,20 +57,21 @@ let curlOverride = null;
 export function __setCurlForTest(fn) { curlOverride = fn; }
 
 // MOCK_FAPI=<fixture.json>：fixture 是 { "<path>": "<raw curl 输出字符串>" }，子进程测试注入。
-// key 用 path（不含 host）；命中返回字符串；缺失抛错（防测错端点）。
+// key 用 path（不含 host，含 query，须与脚本实际请求完全一致）；命中返回字符串；缺失抛错（防测错端点）。
+// 每个子进程只加载一个 fixture 文件。
 let mockFixtures = null;
 function mockFor(url) {
-  if (!process.env.MOCK_FAPI) return null;
   if (!mockFixtures) mockFixtures = JSON.parse(readFileSync(process.env.MOCK_FAPI, 'utf8'));
   const path = url.replace(/^https?:\/\/[^/]+/, '');
-  if (!(path in mockFixtures)) throw new Error(`MOCK_FAPI: no fixture for ${path}`);
+  if (!Object.hasOwn(mockFixtures, path)) {
+    throw new Error(`MOCK_FAPI: no fixture for ${path}; available: ${Object.keys(mockFixtures).join(', ')}`);
+  }
   return mockFixtures[path];
 }
 
 function curlOnce(url) {
-  if (curlOverride) return Promise.resolve(curlOverride(url));
-  const mock = mockFor(url);
-  if (mock !== null) return Promise.resolve(mock);
+  if (curlOverride) return Promise.resolve().then(() => curlOverride(url)); // 同步 throw 转为 rejection
+  if (process.env.MOCK_FAPI) return Promise.resolve(mockFor(url)); // 仅 mock 模式进入，fixture 缺失/为 null 一律抛错
   return new Promise((resolve, reject) => {
     execFile('curl', ['-sS', '-m', '30', '-x', PROXY, url], { maxBuffer: 64 * 1024 * 1024 }, (err, stdout) => (err ? reject(err) : resolve(stdout)));
   });
@@ -440,7 +441,7 @@ test('get_klines: 行映射', async () => {
 - [ ] **Step 2: 跑测试**
 
 Run: `node --test tests/mcp.test.mjs`
-Expected: 11 个 test 全部 PASS。
+Expected: 10 个 test 全部 PASS。
 
 ## Task 5: solve.mjs 端到端测试
 
@@ -564,8 +565,8 @@ Expected: 1 个 test PASS。
 
 - [ ] **Step 1: 跑全部单测**
 
-Run: `cd /d/claude-dev/agents && node --test tests/`
-Expected: 全部 PASS（18 个：scripts-lib 5 + mcp 11 + solve 1 + ta 1）。
+Run: `cd /d/claude-dev/agents && node --test tests/*.test.mjs`（注意：Node v26/Windows 下 `node --test tests/` 目录参数会被解析为模块路径而失败，须用 glob 或显式文件列表）
+Expected: 全部 PASS（19 个：scripts-lib 7 + mcp 10 + solve 1 + ta 1）。
 
 - [ ] **Step 2: 全部脚本语法检查**
 
@@ -651,6 +652,8 @@ Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for 
 ```
 - Skill root = `<skill-root>/skills/trade-assistant` (`<skill-root>` = `${TRADE_PLUGIN_ROOT}` or `D:/claude-dev/agents`).
 ```
+
+> **注意**：`<skill-root>` 已重定义为插件根。该文件内其余 `node <skill-root>/scripts/xxx.mjs` 引用（summary/sync/vector/plan 等，约 6 处）必须同步改为 `node <skill-root>/skills/trade-assistant/scripts/xxx.mjs`，否则解析到错误路径（Task 8 质量审查发现，已修复）。
 
 - [ ] **Step 4: docs/agents.md — 决策表措辞对齐**
 
@@ -767,7 +770,7 @@ Dispatch `plugin-dev:skill-reviewer`（Agent 工具），prompt：评审 `skills
 
 - [ ] **Step 5: 复检后回归**
 
-Run: `cd /d/claude-dev/agents && node --test tests/`
+Run: `cd /d/claude-dev/agents && node --test tests/*.test.mjs`
 Expected: 全部 PASS。
 
 ## Task 12: 最终验证 + 一次干净提交
@@ -779,12 +782,12 @@ Expected: 全部 PASS。
 Run:
 ```bash
 cd /d/claude-dev/agents
-node --test tests/
+node --test tests/*.test.mjs
 for f in skills/trade-assistant/scripts/*.mjs mcp/binance-mcp-server.mjs; do node --check "$f" || echo "FAIL $f"; done
 diff -rq skills/trade-assistant /d/claude-dev/skills/trade-assistant
 node -e "console.log(require('./skills/trade-assistant/evals/evals.json').evals.length)"
 ```
-Expected: 18 个 test 全 PASS、无 FAIL、diff 仅分发专属差异、`10`。
+Expected: 19 个 test 全 PASS、无 FAIL、diff 仅分发专属差异、`10`。
 
 - [ ] **Step 2: git 提交（一次干净提交）**
 

@@ -4,6 +4,8 @@ import { fapi, sleep, fmt, pct } from './_lib.mjs';
 
 const SYM = process.argv[2];
 if (!SYM) { console.error('用法: node coin.mjs <SYMBOL> 例如 ARBUSDT'); process.exit(1); }
+const mIdx = process.argv.indexOf('--m');
+const m = mIdx > 0 ? +process.argv[mIdx + 1] : 48; // 15m K线根数，默认 48（12小时）
 
 // --- 现价 + 24h ---
 const [price, t24] = await Promise.all([
@@ -39,7 +41,7 @@ try {
 await sleep(2500);
 
 // --- 15m K线量价 ---
-const kl = await fapi(`/fapi/v1/klines?symbol=${SYM}&interval=15m&limit=48`);
+const kl = await fapi(`/fapi/v1/klines?symbol=${SYM}&interval=15m&limit=${m}`);
 const vols = kl.map((k) => +k[5]);
 const avgV = vols.slice(0, -1).reduce((a, b) => a + b, 0) / (vols.length - 1);
 console.log('\n近12根15m（★量/均量>1.5 放量, <0.5 缩量）:');
