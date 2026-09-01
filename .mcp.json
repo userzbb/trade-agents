@@ -6,6 +6,16 @@
       "env": {
         "BINANCE_PROXY": "http://127.0.0.1:7897"
       }
+    },
+    "hummingbot-mcp": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["--directory", "${HUMMINGBOT_MCP_DIR}", "run", "main.py"],
+      "env": {
+        "HUMMINGBOT_API_URL": "${HUMMINGBOT_API_URL:-http://localhost:8000}",
+        "HUMMINGBOT_USERNAME": "${HUMMINGBOT_API_USERNAME:-admin}",
+        "HUMMINGBOT_PASSWORD": "${HUMMINGBOT_API_PASSWORD:-hb_p1_paper_2026}"
+      }
     }
   }
 }

@@ -42,10 +42,52 @@ export BINANCE_PROXY=http://127.0.0.1:7897
 | Binance API 密钥 | profile `my-main` | 签名请求鉴权（只在 `binance-cli` 里配置，勿写进代码） | `binance-cli profile create` → 填 API Key / Secret |
 | 本地代理 | `127.0.0.1:7897`（Clash 等） | 直连币安被墙时走代理 | `export BINANCE_PROXY=http://127.0.0.1:7897`（另设 `HTTPS_PROXY`/`HTTP_PROXY` 给 binance-cli） |
 | 数据层 | `D:\trade`（可覆盖） | SQLite（`data/trade.db`）+ 复盘归档（`retrospectives/`） | `export TRADE_HOME=D:/trade`（目录可自动创建） |
+| Docker Desktop | Hyper-V 后端 | 运行 Freqtrade / Hummingbot 引擎容器 | Docker Desktop 官网；代理设 GUI（Settings→Resources→Proxies→`127.0.0.1:7897`） |
+| Python ≥3.11 + uv | — | Hummingbot MCP server 运行环境 | `uv` 官方安装器 |
+| **Freqtrade**（可选） | `E:\trade-bots\freqtrade` | 方向性回测/Hyperopt/执行（REST `127.0.0.1:8080`） | Docker：`docker compose up -d`（详见"交易引擎部署方案"） |
+| **Hummingbot**（可选） | `E:\trade-bots\hummingbot` | 网格/做市/套利执行（API `8000` + MCP） | Docker + uv（详见"交易引擎部署方案"） |
 
 **向量检索（`vector.mjs`）零外部依赖**：不是外部向量数据库，是本地 BM25 检索（中文字符 bigram 分词 + 倒排索引），纯 Node 实现。**无需安装任何数据库、无需 API key、无需外部模型**；索引自动构建到 `${TRADE_HOME}/vector-index.json`（`D:/trade/vector-index.json`），源文件变化时自动重建。详见 [向量检索](docs/vector-search.md)。
 
 **可选依赖（binance-orchestrator 增强）**：信息面 / 信号 / 博弈面 / 链上查询走 `crypto-market-rank`、`binance-trading-signal`、`binance-wallet-tracker`、`query-token-*` 等用户级 skill，按各 skill 的安装方式（通常 `npx skills add <org>/<repo>`）安装；缺失时 orchestrator 会降级提示，不影响核心 skill/MCP。
+
+## 交易引擎部署方案（可选，Freqtrade + Hummingbot）
+
+插件是**控制面**，调用两个独立部署的执行引擎。均为 P1 模拟盘/方向性验证，零真实 API key。
+
+### 环境变量（插件 `.mcp.json` 引用）
+
+```bash
+export HUMMINGBOT_MCP_DIR=/e/trade-bots/hummingbot/mcp     # Hummingbot MCP 仓库路径
+export HUMMINGBOT_API_URL=http://localhost:8000            # Hummingbot API
+export HUMMINGBOT_API_USERNAME=admin
+export HUMMINGBOT_API_PASSWORD=hb_p1_paper_2026
+```
+
+### Freqtrade（方向性回测/执行）
+
+```bash
+# Docker（dry-run，api_server 8080）
+cd /e/trade-bots/freqtrade && docker compose up -d
+# 下载数据 + 回测（Windows 注意 MSYS_NO_PATHCONV=1 防路径改写）
+MSYS_NO_PATHCONV=1 docker exec freqtrade freqtrade download-data --config /freqtrade/user_data/config.json --pairs BTC/USDT:USDT --timeframe 1h --timerange 20250101-20250701
+MSYS_NO_PATHCONV=1 docker exec freqtrade freqtrade backtesting --config /freqtrade/user_data/config.json --strategy RsiMomentum --timerange 20250101-20250701
+curl -s http://127.0.0.1:8080/api/v1/ping   # {"status":"pong"}
+```
+要点：容器内代理 `HTTPS_PROXY=http://host.docker.internal:7897`；`api_server.listen_ip_address` 须 `0.0.0.0`；`jwt_secret_key` ≥32 字符。详见 `references/08-freqtrade-bridge.md`。
+
+### Hummingbot（网格/做市/套利执行）
+
+```bash
+# API server（Docker，8000）+ MCP（uv）
+cd /e/trade-bots/hummingbot/hummingbot-api && docker compose up -d
+cd /e/trade-bots/hummingbot/mcp && uv sync && cp .env.example .env   # 填 API 凭据
+# 验证 MCP（proper initialize 需 protocolVersion/capabilities/clientInfo）
+printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"t","version":"1"}}}\n' | uv run main.py
+```
+P1 用 `binance_perpetual_paper_trade` 模拟盘（零 key）；实盘需 `hbot connect binance_perpetual` 配独立子账户 key。详见 `references/09-hummingbot-bridge.md`。
+
+> **账户隔离**：Freqtrade / Hummingbot / binance-cli（`my-main`）各用独立币安子账户，勿共用 key。策略级部署/启停需 CONFIRM；回测/查询只读免。
 
 ## 组件
 

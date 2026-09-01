@@ -3,6 +3,7 @@
 > Content in English; **the document bodies below are user-facing output and MUST stay Chinese.**
 > Relationship: the trade log (07 §1) records every trade's process (flows into SQLite); the review (07 §2) is the **full per-trade review report**.
 > Every trade must be logged; after 100 trades switch to Kelly sizing (ref 03); at month-end compute real win rate / payoff.
+> **Engine flows** (P4): Freqtrade/Hummingbot execution flows get pulled into the same SQLite truth source (via `sync.mjs` / engine APIs), so 复盘/周报/月报 cover both manual and automated trades. Mark the source (manual / Freqtrade / Hummingbot) in the log.
 
 ## 1. Per-Trade Log — Record Template (copy and fill in Chinese)
 

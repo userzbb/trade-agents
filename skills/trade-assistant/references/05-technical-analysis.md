@@ -3,6 +3,7 @@
 > Content in English; user-facing output in Chinese.
 > Indicators are a **probability reference / confirmation tool, NOT the entry basis itself**. Final entry still follows signals S1–S6 (ref 01) + `solve.mjs`.
 > All computed by `scripts/ta.mjs` (pure Node, zero-dep — no Python/pandas-ta).
+> **Dual use**: the same RSI/MACD/EMA/BOLL/ATR readings serve manual TA **and** become the indicators inside a Freqtrade strategy (`populate_indicators`) when a signal is turned into an unattended directional run.
 
 ## Indicator System (ta.mjs output)
 

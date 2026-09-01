@@ -3,6 +3,7 @@
 > Content in English; user-facing output in Chinese.
 > Core idea: **verify the judgment with a small probe first, add only after it confirms — never load up all at once.**
 > Paired with `scripts/pyramid.mjs` (outputs the batched plan).
+> **Execution routing**: manual pyramid stays under CONFIRM (batched adds); the same layered-add concept maps to a **Hummingbot DCA executor** if you want the averaging programmed. Psychology/behavior rules apply to both — never average down into a losing manual position.
 
 ## 1. Why Pyramid Adding Lowers Liquidation Risk
 

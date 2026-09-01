@@ -32,8 +32,8 @@
                  币安 USDT-M 永续（子账户隔离）
 ```
 
-- **Freqtrade**：`E:\freqtrade\freqtrade`；Python/Docker；`trading_mode=futures`、`margin_mode=isolated`；`api_server` 开 REST；`external_message_consumer` 支持 trade-assistant 注入信号。
-- **Hummingbot**：`E:\hummingbot\hummingbot-api`（API+engine）+ `E:\hummingbot\mcp`（uv MCP）；`binance_perpetual`/`binance_perpetual_paper_trade`。
+- **Freqtrade**：`E:\trade-bots\freqtrade`；Python/Docker；`trading_mode=futures`、`margin_mode=isolated`；`api_server` 开 REST；`external_message_consumer` 支持 trade-assistant 注入信号。
+- **Hummingbot**：`E:\trade-bots\hummingbot\hummingbot-api`（API+engine）+ `E:\trade-bots\hummingbot\mcp`（uv MCP）；`binance_perpetual`/`binance_perpetual_paper_trade`。
 - **插件**：只加集成面（见 §4），不改分析栈。
 
 ## 3. 引擎选择依据
@@ -62,9 +62,9 @@
 
 | 引擎 | 目录 | 运行 | 端口/接口 | 币安访问 |
 |---|---|---|---|---|
-| Freqtrade | `E:\freqtrade\freqtrade` | Docker 或 pip venv | api_server `http://127.0.0.1:8080` | `HTTPS_PROXY=http://host.docker.internal:7897`（容器）/ 宿主机代理 |
-| Hummingbot API | `E:\hummingbot\hummingbot-api` | Docker Desktop | `http://127.0.0.1:8000` | 容器内 `HTTPS_PROXY=http://host.docker.internal:7897` |
-| Hummingbot MCP | `E:\hummingbot\mcp` | uv（Windows 原生） | MCP stdio | `HUMMINGBOT_API_URL=http://localhost:8000` |
+| Freqtrade | `E:\trade-bots\freqtrade` | Docker 或 pip venv | api_server `http://127.0.0.1:8080` | `HTTPS_PROXY=http://host.docker.internal:7897`（容器）/ 宿主机代理 |
+| Hummingbot API | `E:\trade-bots\hummingbot\hummingbot-api` | Docker Desktop | `http://127.0.0.1:8000` | 容器内 `HTTPS_PROXY=http://host.docker.internal:7897` |
+| Hummingbot MCP | `E:\trade-bots\hummingbot\mcp` | uv（Windows 原生） | MCP stdio | `HUMMINGBOT_API_URL=http://localhost:8000` |
 
 ## 6. 阶段分解（每阶段独立可测）
 
@@ -72,7 +72,7 @@
 |---|---|---|
 | **A. Freqtrade 部署 + 回测演示** | Docker/pip 部署；config（futures/isolated/api_server）；下载 BTC-USDT 永续历史数据；跑一个 S1-S6 风格策略回测 | 回测输出胜率/收益/回撤；REST api_server 可访问 |
 | **B. Freqtrade 集成进插件** | references/08、SKILL.md、orchestrator 行、docs | orchestrator 能调 Freqtrade REST（状态/回测）；中文汇报 |
-| **C. Hummingbot 部署收尾** | 恢复 E:\hummingbot 部署（Docker 更新后）；`uv sync`；MCP 注册 | API 起来；MCP tools/list |
+| **C. Hummingbot 部署收尾** | 恢复 E:\trade-bots\hummingbot 部署（Docker 更新后）；`uv sync`；MCP 注册 | API 起来；MCP tools/list |
 | **D. Hummingbot 集成进插件** | `.mcp.json`、references/09、SKILL.md、orchestrator 行、docs | MCP 注册可见；模拟盘 grid bot 全周期 |
 | **E. 统一控制面** | orchestrator 双路由决策表完善；信号注入（分析→Freqtrade external_message_consumer）；CONFIRM 流程统一 | 一次会话内演示"分析→验证→部署→汇报"完整链路 |
 | **F. 文档 + 收尾** | README（依赖+两引擎部署方案）、docs、镜像、一次提交 | 文档完整；插件回归绿；镜像同步 |

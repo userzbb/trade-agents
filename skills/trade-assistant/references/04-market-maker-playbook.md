@@ -2,6 +2,7 @@
 
 > Content in English; user-facing output in Chinese.
 > For coins like BTR/SKR/牛来: price follows the operator's script, not the market. Economic models fail here; game theory is the only tool.
+> **Execution routing**: MM/range conditions here are **Hummingbot's home** — use a grid or PMM controller to quote both sides on the range/accumulation zone (ref 00). Game-theory judgment stays manual; deploy the controller only after a CONFIRM plan (funds + range + limits).
 
 ## 1. The BTR 48-Hour Script (2026-08-30 ~ 09-01, recorded)
 

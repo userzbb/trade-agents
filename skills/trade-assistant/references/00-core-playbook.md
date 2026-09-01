@@ -35,6 +35,25 @@ Total equity
 - **Intraday:** only trade pool coins; chasing leaderboard changes mid-day = 手痒, forbidden. Before every entry, ask three questions: where is my stop? how much am I willing to lose? am I the liquidity being exited into?
 - **Close (before sleep):** if in a position, confirm stop/TP orders exist + log the reason; if flat, close the app — being flat is winning.
 
+## Three-Tool Decision Framework (execution routing)
+
+This playbook is the **brain**; execution routes to one of three tools. This framework decides which:
+
+| Situation | Tool | Why |
+|---|---|---|
+| Directional trend idea worth validating (break-chase/pullback on mainstream) | **Freqtrade** | backtest/Hyperopt first, then run unattended |
+| Grid / range-bound (S6 range ambush), market-making, arbitrage, MM coins | **Hummingbot** | grid/MM/arbitrage controllers, bilateral quoting |
+| Discretionary, small, needs human watch, illiquid/low-confidence | **Manual /binance** | CONFIRM protocol, you watch it |
+| Any order/close/cancel | **Manual /binance** | write ops always go through CONFIRM |
+
+Signal mapping (ref 01): trend/momentum signals (S1/S2/S4) → Freqtrade strategy candidates; range/fade (S3/S6) + MM conditions → Hummingbot grid/MM; pure discretionary reads → manual.
+
+Rules:
+- **Validate before you run**: any directional strategy that can be backtested → Freqtrade backtesting/Hyperopt first; a losing backtest is a valid reason NOT to trade it.
+- **Unattended ≠ unsupervised**: engine bots run under engine risk controls, but the playbook's 6% red line and tier sizing still bound the deployed stake.
+- **CONFIRM at the strategy level**: deploying/starting an engine bot or forcing an entry needs the same plan + CONFIRM as a manual order.
+- **Account isolation**: Freqtrade / Hummingbot / binance-cli each on a separate Binance sub-account — never share keys.
+
 ## 3. Entry Templates (only these three are legal)
 
 - **A. Break-chase:** volume breakout above day/prior high; entry = retest-confirm of the breakout level.

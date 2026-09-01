@@ -89,6 +89,16 @@ Risk: real breakdown → the limit order catches a knife → hard stop; do not r
 - 24h volume < 30M USDT (slippage will kill the stop)
 - Top-trader LS ratio >2.5 AND funding negative (both sides crowded, direction unpredictable)
 
+### Tool mapping (which engine executes which signal — see ref 00 Three-Tool Decision Framework)
+| Signal | Nature | Route |
+|---|---|---|
+| S1 negative-funding momentum | trend/momentum | **Freqtrade** (backtest/validate, run unattended) or manual |
+| S2 healthy pullback | trend | **Freqtrade** or manual |
+| S3 catch-down chain short | trend/breakdown | **Freqtrade** (directional) or manual |
+| S4 distribution breakdown | trend/breakdown | **Freqtrade** (directional) or manual |
+| S6 range-edge ambush | mean-reversion / range | **Hummingbot** (grid) — the range IS a grid; or manual limit |
+| MM coins (BTR type) | market-maker games | **Hummingbot** (MM/grid controllers) or manual w/ game-theory (ref 04) |
+
 ## 3. Daily Data Scripts
 
 ```bash

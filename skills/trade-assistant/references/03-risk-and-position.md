@@ -1,6 +1,7 @@
 # 03 Risk & Position (风控与仓位)
 
 > Content in English; user-facing output in Chinese. **The most important page in the whole system — profit is the byproduct of survival.**
+> **Engine risk mapping** (see ref 00): `solve.mjs` stop/TP params map to Freqtrade strategy `stoploss`/`trailing_stop`/`minimal_roi` for directional runs; the 6% red line and tier position multiplier bound what you deploy into a Hummingbot controller (funds/limits). The red line applies at the **strategy level** (total stake deployed), not just per manual order.
 
 ## 0. Parameter-Solving Principle (since 2026-09-01, highest priority)
 

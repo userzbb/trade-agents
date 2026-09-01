@@ -4,6 +4,7 @@
 > **Long and short are inherently asymmetric — parameters do NOT transfer.**
 > Long = main engine core (S1/S2/S6). Short = quick in/out on emotional collapse; NEVER hold a short waiting for slow decay.
 > **Parameter source rule (since 2026-09-01): stops/TPs MUST come from `solve.mjs`** (expected-value optimal combo + tier discount + wick buffer). Fixed values below are fallback only when the solver cannot run.
+> **Execution routing** (see ref 00): these directional playbooks run either **manual** (CONFIRM via binance-cli) or **Freqtrade** — translate `solve.mjs` stop/TP into the strategy's `stoploss`/`minimal_roi`/`trailing_stop` and run unattended after backtesting. Mean-reversion / range legs (S6) may go to **Hummingbot grid** instead.
 
 ## 1. LONG — Pre-Entry Checklist (ALL checked before any order)
 

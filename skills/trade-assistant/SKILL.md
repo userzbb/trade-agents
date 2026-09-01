@@ -119,24 +119,33 @@ Hard rules:
 
 ## Core Workflows
 
-### A. Document generation (Pillar A — primary)
-1. **复盘**: pull that position's orders/flows (SQLite via `sync.mjs`, or `binance-cli all-orders`) → read `references/07-trade-log-and-review-template.md` → vector-query similar past reviews (`node D:\claude-dev\agents\trade-agents\skills\trade-assistant\scripts\vector.mjs query "复盘 <SYM> <character>" --filter review`) → compose Chinese 复盘 md → write to `D:\trade\retrospectives\` → git commit. Prefer delegating to the `retrospective-writer` agent.
-2. **周报/月报**: run `summary.mjs weekly|monthly` → review → (monthly) validate next targets with `plan.mjs` → archive.
-3. **交易计划**: chat table; save to `D:\trade\plans\` only on request.
-
-### B. Analysis (uses the toolbox)
+### A. Analysis (feeds all three tools)
 1. **Daily re-rank** (`scan.mjs` → filter per ref 01 → `coin.mjs` per candidate, sleep 3s between → output tone + ≤3 long + ≤3 short with S1–S6 labels).
-2. **Trade execution** (user wants to place): read playbook (ref 02) → `coin.mjs` capital/game side (gate 1) → `ta.mjs` technical timing (gate 2) → psychology check (ref 06 §5) → `pyramid.mjs` batch structure → `solve.mjs` stops/TPs → full plan table + 模式A/B → wait for `CONFIRM` → execute → update log.
-3. **Status check** ("现在呢"): `position.mjs` → per-position `coin.mjs` structure + key levels → output table + liq-distance + structure read; prompt at the 8% daily circuit-breaker.
+2. **Status check** ("现在呢"): `position.mjs` → per-position `coin.mjs` structure + key levels → output table + liq-distance + structure read; prompt at the 8% daily circuit-breaker.
+3. **Probability consult**: `prob.mjs` with REAL position params; always note "model valid on ARB-type mainstream, fails on MM coins"; combine with ref 04 script-stage read — don't just give numbers.
 
-### C. Freqtrade (direction strategy lab + execution; see `08-freqtrade-bridge.md`)
+### B. Route to a tool (decision framework per `references/00`)
+After analysis, decide which tool executes:
+- **Manual /binance** (C): discretionary, small size, needs human judgment, illiquid/low-confidence — you watch it.
+- **Freqtrade** (D): a directional S1-S6 idea worth validating/backtesting, or a direction strategy to run unattended.
+- **Hummingbot** (E): grid / market-making / arbitrage / mean-reversion / bilateral quoting.
+Rule of thumb + signal mapping in `references/00-core-playbook.md` §Three-Tool Decision Framework.
+
+### C. Manual /binance workflow (CONFIRM execution)
+1. **Trade execution** (user wants to place): read playbook (ref 02) → `coin.mjs` capital/game side (gate 1) → `ta.mjs` technical timing (gate 2) → psychology check (ref 06 §5) → `pyramid.mjs` batch structure → `solve.mjs` stops/TPs → full plan table + 模式A/B → wait for `CONFIRM` → execute via binance-cli → update log.
+
+### D. Freqtrade workflow (direction strategy lab + execution; see `08-freqtrade-bridge.md`)
 1. **回测/验证** ("回测这个策略 / 验证参数"): read `references/08` → Freqtrade REST: `download-data` if pair missing → `backtesting` → (if asked) `hyperopt` in background → **中文汇报**胜率/收益/回撤/参数，标注数据来源。只读，**免 CONFIRM**。结果亏损要如实报。
 2. **运行方向性策略** ("用 Freqtrade 跑 X"): show plan (strategy / pair / stake / stop-TP / risk) → **CONFIRM** → start bot or force entry via REST → monitor `/api/v1/status` → 中文汇报。
 
-### D. Hummingbot (grid / MM / arbitrage execution; see `09-hummingbot-bridge.md`)
+### E. Hummingbot workflow (grid / MM / arbitrage execution; see `09-hummingbot-bridge.md`)
 1. **部署/启停 bot** ("部署网格/做市 bot"): read `references/09` → show plan (controller / pair / funds / limits) → **CONFIRM** → via `hummingbot-mcp` deploy/start → monitor status.
 2. **查询状态/PnL** ("查 bot 状态/盈亏"): `hummingbot-mcp` query → **中文表格**（模拟盘必须标注"模拟盘非实盘"）。只读，免 CONFIRM。
-4. **Probability consult**: `prob.mjs` with REAL position params; always note "model valid on ARB-type mainstream, fails on MM coins"; combine with ref 04 script-stage read — don't just give numbers.
+
+### F. Document generation (Pillar A — record-keeping)
+1. **复盘**: pull that position's orders/flows (SQLite via `sync.mjs`, or `binance-cli all-orders` / engine APIs) → read `references/07-trade-log-and-review-template.md` → vector-query similar past reviews (`node <skill-root>/skills/trade-assistant/scripts/vector.mjs query "复盘 <SYM> <character>" --filter review`) → compose Chinese 复盘 md → write to `D:\trade\retrospectives\` → git commit. Prefer delegating to the `retrospective-writer` agent.
+2. **周报/月报**: run `summary.mjs weekly|monthly` → review → (monthly) validate next targets with `plan.mjs` → archive.
+3. **交易计划**: chat table; save to `D:\trade\plans\` only on request.
 
 ## references Guide (read on demand, not all at once)
 

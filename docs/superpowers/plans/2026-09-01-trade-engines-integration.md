@@ -4,7 +4,7 @@
 
 **Goal:** trade-agents 插件作为统一控制面，调用 Freqtrade（方向性回测/执行）与 Hummingbot（网格/做市/套利执行），跑通「盘面分析 → 策略验证 → 自动化执行 → 汇报」完整链路。
 
-**Architecture:** 两引擎独立部署（Freqtrade 于 `E:\freqtrade\freqtrade`，Hummingbot 于 `E:\hummingbot`），trade-agents 只加集成面（REST skill / MCP / orchestrator 路由 / references），分析栈不变。Phase A-F 每阶段独立可测。
+**Architecture:** 两引擎独立部署（Freqtrade 于 `E:\trade-bots\freqtrade`，Hummingbot 于 `E:\trade-bots\hummingbot`），trade-agents 只加集成面（REST skill / MCP / orchestrator 路由 / references），分析栈不变。Phase A-F 每阶段独立可测。
 
 **Tech Stack:** Docker Desktop（Hyper-V）、Python 3.11+/uv（Windows）、Freqtrade（futures/REST api_server）、Hummingbot（binance_perpetual + MCP）、Node ≥26（插件）。
 
@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- 部署目录：Freqtrade `E:\freqtrade\freqtrade`；Hummingbot `E:\hummingbot\{hummingbot-api,mcp}`。插件 `D:\claude-dev\agents\trade-agents`。
+- 部署目录：Freqtrade `E:\trade-bots\freqtrade`；Hummingbot `E:\trade-bots\hummingbot\{hummingbot-api,mcp}`。插件 `D:\claude-dev\agents\trade-agents`。
 - 插件**不写死绝对路径**（MCP 用 `${HUMMINGBOT_MCP_DIR}`；Freqtrade URL 用环境变量默认 `http://127.0.0.1:8080`）。
 - 语言边界：skill 层英文；docs 中文；用户可见输出中文。
 - 单真相源：skill 改动在 `skills/trade-assistant/`，改后同步镜像 + `diff -rq`。
@@ -28,8 +28,8 @@
 
 | 文件 | 职责 | 动作 |
 |---|---|---|
-| `E:\freqtrade\freqtrade\` | Freqtrade 引擎 + 策略 + config | 部署（外部） |
-| `E:\hummingbot\{hummingbot-api,mcp}\` | Hummingbot API + MCP | 部署（外部，C 阶段恢复） |
+| `E:\trade-bots\freqtrade\` | Freqtrade 引擎 + 策略 + config | 部署（外部） |
+| `E:\trade-bots\hummingbot\{hummingbot-api,mcp}\` | Hummingbot API + MCP | 部署（外部，C 阶段恢复） |
 | `.mcp.json` | 注册 `hummingbot-mcp` | Modify |
 | `skills/trade-assistant/SKILL.md` | Engines Bridge 小节 + references 指南行 | Modify |
 | `skills/trade-assistant/references/08-freqtrade-bridge.md` | Freqtrade REST/信号注入/回测/CONFIRM（英文） | Create |
@@ -44,12 +44,12 @@
 
 ### Task 1: Freqtrade Docker 部署
 
-**Files:** `E:\freqtrade\freqtrade`（已克隆，depth 1）
+**Files:** `E:\trade-bots\freqtrade`（已克隆，depth 1）
 
 - [ ] **Step 1: 建 user_data 与 config**
 
 ```bash
-cd /e/freqtrade/freqtrade
+cd /e/trade-bots/freqtrade
 mkdir -p user_data
 cp config_examples/config_futures.json.example config.json 2>/dev/null || cp config_examples/config.json.example config.json
 ```
@@ -103,7 +103,7 @@ class RsiMomentum(IStrategy):
 
 Run:
 ```bash
-cd /e/freqtrade/freqtrade
+cd /e/trade-bots/freqtrade
 docker compose up -d 2>&1 | tail -5
 docker compose logs --tail=20 2>&1 | tail -15
 ```
@@ -192,13 +192,13 @@ Expected: 19 pass / 0 fail。
 
 ### Task 7: 恢复 Hummingbot 部署
 
-**Files:** 无（`E:\hummingbot\hummingbot-api`、`E:\hummingbot\mcp` 已就绪）
+**Files:** 无（`E:\trade-bots\hummingbot\hummingbot-api`、`E:\trade-bots\hummingbot\mcp` 已就绪）
 
 - [ ] **Step 1: 确认 Docker 更新完成、compose 启动**
 
 前提：用户已更新重启 Docker Desktop。Run:
 ```bash
-cd /e/hummingbot/hummingbot-api
+cd /e/trade-bots/hummingbot/hummingbot-api
 docker compose up -d 2>&1 | tail -10
 docker logs hummingbot-api 2>&1 | grep -i "uvicorn running" | head -2
 curl -s http://localhost:8000/ 2>&1 | head -3
@@ -210,7 +210,7 @@ Expected: 容器 running、日志含 Uvicorn、curl 有响应。
 
 Run:
 ```bash
-cd /e/hummingbot/mcp && uv sync 2>&1 | tail -4
+cd /e/trade-bots/hummingbot/mcp && uv sync 2>&1 | tail -4
 printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}\n' \
   | HUMMINGBOT_API_URL=http://localhost:8000 HUMMINGBOT_USERNAME=admin HUMMINGBOT_PASSWORD=hb_p1_paper_2026 \
   uv run main.py 2>&1 | head -3
@@ -270,7 +270,7 @@ Run:
 ```bash
 printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}\n{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}\n' \
   | HUMMINGBOT_API_URL=http://localhost:8000 HUMMINGBOT_USERNAME=admin HUMMINGBOT_PASSWORD=hb_p1_paper_2026 \
-  uv --directory /e/hummingbot/mcp run main.py 2>&1 | head -3
+  uv --directory /e/trade-bots/hummingbot/mcp run main.py 2>&1 | head -3
 ```
 Expected: initialize + tools/list 两行响应。
 
@@ -314,7 +314,7 @@ Expected: initialize + tools/list 两行响应。
 
 - [ ] **Step 1: README 依赖 + 两引擎部署方案**
 
-在「依赖与环境要求」补：Docker Desktop、Python+uv、Freqtrade、Hummingbot、环境变量（`HUMMINGBOT_MCP_DIR`、Freqtrade REST URL 等）。新增「交易引擎部署方案」小节：Freqtrade（Docker、config、回测命令、api_server、代理）与 Hummingbot（E:\hummingbot、Docker、uv MCP、模拟盘）实际跑通的步骤 + 凭据说明 + 账户隔离建议。
+在「依赖与环境要求」补：Docker Desktop、Python+uv、Freqtrade、Hummingbot、环境变量（`HUMMINGBOT_MCP_DIR`、Freqtrade REST URL 等）。新增「交易引擎部署方案」小节：Freqtrade（Docker、config、回测命令、api_server、代理）与 Hummingbot（E:\trade-bots\hummingbot、Docker、uv MCP、模拟盘）实际跑通的步骤 + 凭据说明 + 账户隔离建议。
 - [ ] **Step 2: docs 完善**（architecture 双引擎分层；usage 场景；development 说明"引擎是外部依赖，插件只调用"）
 
 ### Task 13: 镜像同步 + 最终验证 + 一次提交
