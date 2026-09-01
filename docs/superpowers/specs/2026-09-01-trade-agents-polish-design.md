@@ -6,7 +6,7 @@
 
 ## 1. 背景与现状
 
-唯一真相源是 `D:\claude-dev\agents`（trade-agents 插件，单插件全功能）。`skills/trade-assistant` 是独立分发镜像，`plugins/trade-plugin` 已退役（只读，不操作）。
+唯一真相源是 `D:\claude-dev\agents\trade-agents`（trade-agents 插件，单插件全功能）。`skills/trade-assistant` 是独立分发镜像，`plugins/trade-plugin` 已退役（只读，不操作）。
 
 探索确认的问题：
 

@@ -4,7 +4,7 @@
 >
 > **提交策略**：per spec §3.7，所有改动合并为**一次干净提交**（Task 10）。各 Task 内的 `git status` 检查是 checkpoint，不是提交点。
 
-**Goal:** 对 `D:\claude-dev\agents`（trade-agents 插件）做全面打磨：agents 触发与路径、MCP server 健壮性、脚本回归测试、evals 扩展、镜像同步，交付一次干净提交。
+**Goal:** 对 `D:\claude-dev\agents\trade-agents`（trade-agents 插件）做全面打磨：agents 触发与路径、MCP server 健壮性、脚本回归测试、evals 扩展、镜像同步，交付一次干净提交。
 
 **Architecture:** 测试用 `node:test`（零依赖）+ `MOCK_FAPI`/`__setCurlForTest` 注入，不发真实网络请求。MCP server 重构为可导出可测（`parseCliOutput`/`buildToolList`/`callTool` + 测试钩子 + `isMain` 守卫）。scripts 通过 `_lib.mjs` 的 mock 钩子在子进程端到端测试。agents 改动限 description/路径/文档。子 agent 复检分 4 维度。
 
@@ -590,7 +590,7 @@ Expected: 除 "description too short（1 characters）" 外全部 ✅/⚠️。�
 将 `## Environment Facts` 小节中：
 
 ```
-Read `D:\claude-dev\agents\skills\trade-assistant\SKILL.md` → "Environment Facts" for the authoritative block.
+Read `D:\claude-dev\agents\trade-agents\skills\trade-assistant\SKILL.md` → "Environment Facts" for the authoritative block.
 ```
 
 改为：
@@ -614,8 +614,8 @@ Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for 
 ```
 | 信息面 — social hype / sentiment / smart-money inflow / top-trader PnL ranks | `crypto-market-rank` | `node C:\Users\zizim\.agents\skills\crypto-market-rank\scripts\cli.mjs <subcmd> '<json>'` |
 ...
-| Technical indicators (RSI/MACD/EMA/BOLL/ATR/divergence/patterns) | trade-assistant toolbox | `node D:\claude-dev\agents\skills\trade-assistant\scripts\ta.mjs <SYM> [--interval 1h]` |
-| Market scan / coin checkup / probability / stop-TP solver / pyramid | trade-assistant toolbox | `node D:\claude-dev\agents\skills\trade-assistant\scripts\scan.mjs` / `coin.mjs` / `prob.mjs` / `solve.mjs` / `pyramid.mjs` |
+| Technical indicators (RSI/MACD/EMA/BOLL/ATR/divergence/patterns) | trade-assistant toolbox | `node D:\claude-dev\agents\trade-agents\skills\trade-assistant\scripts\ta.mjs <SYM> [--interval 1h]` |
+| Market scan / coin checkup / probability / stop-TP solver / pyramid | trade-assistant toolbox | `node D:\claude-dev\agents\trade-agents\skills\trade-assistant\scripts\scan.mjs` / `coin.mjs` / `prob.mjs` / `solve.mjs` / `pyramid.mjs` |
 ```
 
 改为：
@@ -644,7 +644,7 @@ Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for 
 将：
 
 ```
-- Skill root = `D:\claude-dev\agents\skills\trade-assistant` (override via `TRADE_PLUGIN_ROOT`).
+- Skill root = `D:\claude-dev\agents\trade-agents\skills\trade-assistant` (override via `TRADE_PLUGIN_ROOT`).
 ```
 
 改为：
@@ -754,7 +754,7 @@ Expected: 唯一差异是 `Only in /d/claude-dev/skills/trade-assistant: .git|.g
 
 - [ ] **Step 1: plugin-validator 复检插件结构**
 
-Dispatch `plugin-dev:plugin-validator`（Agent 工具），prompt：校验 `D:\claude-dev\agents` 插件结构/manifest/agents/skills 是否符合 plugin 规范。修复其返回的结构性问题。
+Dispatch `plugin-dev:plugin-validator`（Agent 工具），prompt：校验 `D:\claude-dev\agents\trade-agents` 插件结构/manifest/agents/skills 是否符合 plugin 规范。修复其返回的结构性问题。
 
 - [ ] **Step 2: code-reviewer 复检 MCP + scripts diff**
 

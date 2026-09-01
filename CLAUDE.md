@@ -6,7 +6,7 @@ Single installable Claude Code plugin for the Binance USDT-M perpetual futures s
 
 ## Key paths
 
-- Plugin root: `D:\claude-dev\agents`
+- Plugin root: `D:\claude-dev\agents\trade-agents`
 - **Skill (single source of truth)**: `skills/trade-assistant/`
   - Strategy KB: `references/` — 8 English files `00-core-playbook` … `07-trade-log-and-review-template` (contains Chinese output templates)
   - Scripts: `scripts/` — 14 zero-dep Node scripts (scan/coin/ta/prob/solve/pyramid/position/sync/report/plan/summary/db/_lib/vector)

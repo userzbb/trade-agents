@@ -11,7 +11,7 @@ description: 币安 U 本位永续合约交易助手（D:\trade 项目），强�
 
 ## Two Pillars (positioning)
 
-- **Pillar A — Document generation (复盘/总结).** Generate 计划/复盘/周报/月报 markdown documents per the lifecycle below. User-triggered. Heavy lifting (retrospective-writer agent, BM25 similar-review retrieval) lives in the `trade-agents` plugin (`D:\claude-dev\agents`) and is delegated to it.
+- **Pillar A — Document generation (复盘/总结).** Generate 计划/复盘/周报/月报 markdown documents per the lifecycle below. User-triggered. Heavy lifting (retrospective-writer agent, BM25 similar-review retrieval) lives in the `trade-agents` plugin (`D:\claude-dev\agents\trade-agents`) and is delegated to it.
 - **Pillar B — /binance orchestration.** For any binance capability, decide the provider per the dependency table below, execute/format, summarize in Chinese. Order placement always goes through the CONFIRM protocol.
 
 ## Document Lifecycle (what becomes a file, what stays in chat)
@@ -91,7 +91,7 @@ Known issue: `position.mjs` can hang on proxy jitter (>60s no output → kill it
 ## Core Workflows
 
 ### A. Document generation (Pillar A — primary)
-1. **复盘**: pull that position's orders/flows (SQLite via `sync.mjs`, or `binance-cli all-orders`) → read `references/07-trade-log-and-review-template.md` → vector-query similar past reviews (`node D:\claude-dev\agents\skills\trade-assistant\scripts\vector.mjs query "复盘 <SYM> <character>" --filter review`) → compose Chinese 复盘 md → write to `D:\trade\retrospectives\` → git commit. Prefer delegating to the `retrospective-writer` agent.
+1. **复盘**: pull that position's orders/flows (SQLite via `sync.mjs`, or `binance-cli all-orders`) → read `references/07-trade-log-and-review-template.md` → vector-query similar past reviews (`node D:\claude-dev\agents\trade-agents\skills\trade-assistant\scripts\vector.mjs query "复盘 <SYM> <character>" --filter review`) → compose Chinese 复盘 md → write to `D:\trade\retrospectives\` → git commit. Prefer delegating to the `retrospective-writer` agent.
 2. **周报/月报**: run `summary.mjs weekly|monthly` → review → (monthly) validate next targets with `plan.mjs` → archive.
 3. **交易计划**: chat table; save to `D:\trade\plans\` only on request.
 
