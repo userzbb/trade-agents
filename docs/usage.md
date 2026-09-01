@@ -21,6 +21,9 @@
 | 找之前类似的复盘/行情 | retrospective-writer → `vector.mjs` | 相似复盘列表（中文） |
 | 目标 / 多久能赚 X | skill → `plan.mjs` | 三套方案（A稳健/B延续/C激进） |
 | 胜率多少 / 概率 | skill → `prob.mjs` | 蒙特卡洛概率表 |
+| 回测这个策略 / 验证参数 | orchestrator → Freqtrade REST | 回测结果（胜率/收益/回撤）中文汇报；只读免 CONFIRM |
+| 部署/启停网格或做市 bot | orchestrator → `hummingbot-mcp` | bot 生命周期 + 中文状态汇报；部署需 CONFIRM |
+| 查 Hummingbot bot 状态/盈亏 | orchestrator → `hummingbot-mcp` | bot 状态/模拟 PnL 中文表格 |
 
 ## 常用命令速查（scripts/ 目录下）
 
@@ -45,6 +48,8 @@ node vector.mjs query "复盘 ARB" --filter review             # 相似复盘检
 - 代理在跑：`127.0.0.1:7897`（Clash 等）
 - binance-cli profile：`my-main`（`binance-cli profile create` 配置）
 - 数据层：`D:\trade`（`TRADE_HOME` 可覆盖）
+- **Freqtrade**（可选）：Docker dry-run，REST `127.0.0.1:8080`（见 `references/08`）
+- **Hummingbot**（可选）：Docker API `127.0.0.1:8000` + MCP（`HUMMINGBOT_MCP_DIR` 指向 `E:\trade-bots\hummingbot\mcp`，见 `references/09`）
 
 ## 重要提醒
 

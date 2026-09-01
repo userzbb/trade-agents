@@ -76,8 +76,10 @@ Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for 
 | On-chain token / address / audit | `query-token-info` / `query-address-info` / `query-token-audit` | read their skill references + run their CLI |
 | Technical indicators (RSI/MACD/EMA/BOLL/ATR/divergence/patterns) | trade-assistant toolbox | `node <skill-root>/skills/trade-assistant/scripts/ta.mjs <SYM> [--interval 1h]` |
 | Market scan / coin checkup / probability / stop-TP solver / pyramid | trade-assistant toolbox | `node <skill-root>/skills/trade-assistant/scripts/scan.mjs` / `coin.mjs` / `prob.mjs` / `solve.mjs` / `pyramid.mjs` |
+| **方向性策略回测/Hyperopt/执行** | Freqtrade | read SKILL.md → Engines Bridge + `references/08`; backtest/Hyperopt/status/balance are read-only (no CONFIRM); deploy/start/stop/force-entry need CONFIRM; REST `http://127.0.0.1:8080` (URL overridable via env) |
+| **网格/做市/套利/三重屏障执行** | Hummingbot | read SKILL.md → Engines Bridge + `references/09`; query bot status/PnL via `hummingbot-mcp` tools (no CONFIRM); deploy/start/stop bots need CONFIRM |
 
-`TRADE_PLUGIN_ROOT` / `TRADE_HOME` / `CRYPTO_MARKET_RANK_CLI` are overridable via env — Path Resolution always prefers them.
+`TRADE_PLUGIN_ROOT` / `TRADE_HOME` / `CRYPTO_MARKET_RANK_CLI` are overridable via env — Path Resolution always prefers them. `HUMMINGBOT_MCP_DIR` locates the Hummingbot MCP repo; Freqtrade API URL defaults to `http://127.0.0.1:8080`.
 
 ## Process
 

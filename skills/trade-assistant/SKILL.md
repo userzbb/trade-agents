@@ -9,10 +9,22 @@ description: 币安 U 本位永续合约交易助手（D:\trade 项目），强�
 
 > **Language rule: all user-facing output — conversation tables, 复盘/周报/月报/计划 document bodies, summaries, error messages — MUST be in Chinese.** This file, references, and scripts are in English for the LLM's efficiency.
 
+## Three-Tool Orchestration (top-level routing)
+
+This skill's core job is to **route each request to exactly one of three tools**, efficiently:
+
+| Tool | What it's for | Interface | CONFIRM |
+|---|---|---|---|
+| **/binance + binance-cli** | market data, account, **manual discretionary execution** (analysis-driven) | `binance-cli` / fapi | manual orders: **yes** |
+| **Freqtrade** | **direction strategy lab**: backtest, Hyperopt, dry-run/live directional execution | REST `http://127.0.0.1:8080` | strategy deploy/start: **yes**; backtest/Hyperopt/query: no |
+| **Hummingbot** | **grid / market-making / arbitrage / triple-barrier** automated execution | MCP `hummingbot-mcp` | bot deploy/start: **yes**; status/PnL query: no |
+
+Routing rule of thumb: **analysis/manual** → /binance+cli; **validate a directional idea or run directional** → Freqtrade; **run grid/MM/arbitrage unattended** → Hummingbot. The analysis stack (S1-S6, `solve.mjs`, tier) feeds all three. Details in the provider decision table (below), `08-freqtrade-bridge.md`, and `09-hummingbot-bridge.md`.
+
 ## Two Pillars (positioning)
 
 - **Pillar A — Document generation (复盘/总结).** Generate 计划/复盘/周报/月报 markdown documents per the lifecycle below. User-triggered. Heavy lifting (retrospective-writer agent, BM25 similar-review retrieval) lives in the `trade-agents` plugin (`D:\claude-dev\agents\trade-agents`) and is delegated to it.
-- **Pillar B — /binance orchestration.** For any binance capability, decide the provider per the dependency table below, execute/format, summarize in Chinese. Order placement always goes through the CONFIRM protocol.
+- **Pillar B — Three-tool orchestration.** For any trading capability, route to /binance, Freqtrade, or Hummingbot per the decision table / Engines Bridge; execute/format; summarize in Chinese. Order placement and strategy-level ops always go through the CONFIRM protocol.
 
 ## Document Lifecycle (what becomes a file, what stays in chat)
 
@@ -79,6 +91,23 @@ This skill **strongly depends on the external `/binance` skill** (user-level, `n
 
 Known issue: `position.mjs` can hang on proxy jitter (>60s no output → kill it); fallback: `export HTTPS_PROXY=... HTTP_PROXY=...` then manually `binance-cli futures-usds account-information-v2` with 2–4 retries.
 
+## Engines Bridge (Freqtrade + Hummingbot — additive execution engines)
+
+This skill is the **control plane / caller** for two externally-deployed execution engines. It does NOT replace the analysis stack or the CONFIRM manual path.
+
+| Engine | Purpose | Interface | Reference |
+|---|---|---|---|
+| **Freqtrade** | directional/trend **backtest, Hyperopt, dry-run/live execution** | REST API `http://127.0.0.1:8080` (Basic→JWT) | `08-freqtrade-bridge.md` |
+| **Hummingbot** | **grid / market-making / arbitrage / triple-barrier** automated execution | MCP server `hummingbot-mcp` | `09-hummingbot-bridge.md` |
+
+Hard rules:
+- **Strategy-level ops need CONFIRM**: deploy/start/stop a bot/strategy, force an entry, change engine params — show the full plan first.
+- **Read-only / backtest / Hyperopt / queries need no CONFIRM** (analysis only).
+- Intra-bot order management (stoploss, grid, triple-barrier) is handled by each engine's own risk controls.
+- **Account isolation**: Freqtrade and Hummingbot each use their own Binance sub-account keys; binance-cli (`my-main`) is the manual account. Never share keys.
+- Proxy: engine containers reach Binance via `HTTPS_PROXY=http://host.docker.internal:7897` (Docker) or the host proxy.
+- Env vars: `HUMMINGBOT_MCP_DIR` locates the Hummingbot MCP repo; Freqtrade URL defaults to `http://127.0.0.1:8080`.
+
 ## Hard Rules (from `references/00-core-playbook.md`, highest priority)
 
 1. **CONFIRM protocol (top priority)**: any order/close/cancel/leverage/transfer → first output the **complete trade plan** for user review. One-shot plan, no stepwise probing. Plan must include: all orders (entry + stop + TP) with full params (symbol/side/type/price/qty/reduce-only); execution order, margin, max loss, expected gain; **risk note** (max loss, liq distance, wick/slippage, the signal's historical failure mode); **win-rate estimate** (`prob.mjs` Monte-Carlo + economics logic + game-theory judgment S1-S6/script stage/crowding cross-validated — if they conflict, state so, take conservative); then offer **模式 A (manual — output plan only, no execution)** or **模式 B (auto — user types `CONFIRM`, execute the approved order only)**. Read-only queries (balance/positions/market/prob) need no confirmation.
@@ -99,6 +128,14 @@ Known issue: `position.mjs` can hang on proxy jitter (>60s no output → kill it
 1. **Daily re-rank** (`scan.mjs` → filter per ref 01 → `coin.mjs` per candidate, sleep 3s between → output tone + ≤3 long + ≤3 short with S1–S6 labels).
 2. **Trade execution** (user wants to place): read playbook (ref 02) → `coin.mjs` capital/game side (gate 1) → `ta.mjs` technical timing (gate 2) → psychology check (ref 06 §5) → `pyramid.mjs` batch structure → `solve.mjs` stops/TPs → full plan table + 模式A/B → wait for `CONFIRM` → execute → update log.
 3. **Status check** ("现在呢"): `position.mjs` → per-position `coin.mjs` structure + key levels → output table + liq-distance + structure read; prompt at the 8% daily circuit-breaker.
+
+### C. Freqtrade (direction strategy lab + execution; see `08-freqtrade-bridge.md`)
+1. **回测/验证** ("回测这个策略 / 验证参数"): read `references/08` → Freqtrade REST: `download-data` if pair missing → `backtesting` → (if asked) `hyperopt` in background → **中文汇报**胜率/收益/回撤/参数，标注数据来源。只读，**免 CONFIRM**。结果亏损要如实报。
+2. **运行方向性策略** ("用 Freqtrade 跑 X"): show plan (strategy / pair / stake / stop-TP / risk) → **CONFIRM** → start bot or force entry via REST → monitor `/api/v1/status` → 中文汇报。
+
+### D. Hummingbot (grid / MM / arbitrage execution; see `09-hummingbot-bridge.md`)
+1. **部署/启停 bot** ("部署网格/做市 bot"): read `references/09` → show plan (controller / pair / funds / limits) → **CONFIRM** → via `hummingbot-mcp` deploy/start → monitor status.
+2. **查询状态/PnL** ("查 bot 状态/盈亏"): `hummingbot-mcp` query → **中文表格**（模拟盘必须标注"模拟盘非实盘"）。只读，免 CONFIRM。
 4. **Probability consult**: `prob.mjs` with REAL position params; always note "model valid on ARB-type mainstream, fails on MM coins"; combine with ref 04 script-stage read — don't just give numbers.
 
 ## references Guide (read on demand, not all at once)
@@ -113,6 +150,8 @@ Known issue: `position.mjs` can hang on proxy jitter (>60s no output → kill it
 | `05-technical-analysis.md` | interpreting `ta.mjs`; indicator failure boundaries on T3 |
 | `06-pyramid-and-psychology.md` | batch structure, add-barriers, 3-layer resonance, psychology |
 | `07-trade-log-and-review-template.md` | logging; generating 复盘 md after full close |
+| `08-freqtrade-bridge.md` | Freqtrade REST/backtest/Hyperopt, signal injection, CONFIRM scope; "回测这个策略/跑 Freqtrade" |
+| `09-hummingbot-bridge.md` | Hummingbot MCP tools, controller mapping, paper trade; "帮我部署个网格/查 bot 状态" |
 
 ## Output Language
 
