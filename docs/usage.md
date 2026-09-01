@@ -24,6 +24,8 @@
 | 回测这个策略 / 验证参数 | orchestrator → Freqtrade REST | 回测结果（胜率/收益/回撤）中文汇报；只读免 CONFIRM |
 | 部署/启停网格或做市 bot | orchestrator → `hummingbot-mcp` | bot 生命周期 + 中文状态汇报；部署需 CONFIRM |
 | 查 Hummingbot bot 状态/盈亏 | orchestrator → `hummingbot-mcp` | bot 状态/模拟 PnL 中文表格 |
+| 看下三个引擎的状态 | skill → `engines.mjs` | 统一中文看板（Freqtrade/Hummingbot/binance 持仓+盈亏） |
+| 对候选币深查 OI/主动盘 | skill → `coin.mjs <SYM>` | 持仓量 OI + taker 买占比 + 账户LS 确认趋势 |
 
 ## 常用命令速查（scripts/ 目录下）
 

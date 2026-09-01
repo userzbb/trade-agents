@@ -40,6 +40,19 @@ try {
 
 await sleep(2500);
 
+// --- OI + taker + 账户级 LS（趋势/主动盘/拥挤度确认）---
+// P1 用裸 fapi（两 bot 未干净暴露这些端点；binance-cli 的 Node 调用 Windows 修复列 P2）
+try {
+  const oi = await fapi(`/fapi/v1/openInterest?symbol=${SYM}`);
+  const tk = await fapi(`/futures/data/takerlongshortRatio?symbol=${SYM}&period=15m&limit=1`);
+  const ls = await fapi(`/futures/data/topLongShortAccountRatio?symbol=${SYM}&period=1h&limit=1`);
+  const buyPct = tk[0] ? (+tk[0].buySellRatio / (1 + +tk[0].buySellRatio)) * 100 : null;
+  console.log(`\n持仓量 OI ${(+oi.openInterest).toFixed(0)}${ls[0] ? ` | 账户LS ${ls[0].longShortRatio}（多${(+ls[0].longAccount * 100).toFixed(0)}%）` : ''}${buyPct != null ? ` | taker买占比 ${buyPct.toFixed(0)}%` : ''}`);
+  console.log('  → OI 上升+买占比↑ = 多头进场确认；OI 下降+买占比↑ = 离场信号');
+} catch (e) { console.log('OI/taker 获取失败:', e.message); }
+
+await sleep(2500);
+
 // --- 15m K线量价 ---
 const kl = await fapi(`/fapi/v1/klines?symbol=${SYM}&interval=15m&limit=${m}`);
 const vols = kl.map((k) => +k[5]);

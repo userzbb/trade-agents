@@ -62,6 +62,14 @@ MSYS_NO_PATHCONV=1 docker exec freqtrade freqtrade hyperopt \
 - **Read-only, no CONFIRM**: `ping`, `status`, `balance`, backtests, Hyperopt (analysis only).
 - Intra-bot order management (stoploss, trailing) is handled by Freqtrade's engine per the strategy.
 
+## Message WebSocket (live signal stream)
+
+For real-time push instead of polling:
+- Endpoint `ws://127.0.0.1:8080/api/v1/message/ws?token=<ws_token>` — `ws_token` comes from `POST /api/v1/token/login` (JWT response).
+- Subscribe to `whitelist` / `analyzed_df` / `new_candle` — the strategy-analyzed dataframe and new-candle events arrive as they happen.
+- The plugin can consume `analyzed_df` (indicators computed by the strategy) as a live signal feed — the input source for P3 signal injection (forceenter).
+- Complement with `GET /api/v1/pair_candles` (pull the analyzed candles on demand).
+
 ## Account isolation
 
 Freqtrade uses its **own Binance sub-account keys** (`hbot connect binance` / config `exchange.key/secret`). Do NOT share keys with binance-cli (`my-main`) or Hummingbot. Dry-run needs no keys.

@@ -68,9 +68,12 @@ export function parseCliOutput(out) {
 async function cli(args, { retries = 3 } = {}) {
   const env = { ...process.env, HTTPS_PROXY: PROXY, HTTP_PROXY: PROXY };
   const exec = cliExecImpl || execFile;
+  // Windows 上 binance-cli 是 .cmd shim：execFile 直跑会 EINVAL，须经 cmd.exe /c。
+  const file = process.platform === 'win32' ? 'cmd.exe' : CLI_NAME;
+  const execArgs = process.platform === 'win32' ? ['/c', CLI_NAME, ...args] : args;
   for (let attempt = 0; attempt < retries; attempt++) {
     const { ok, out, err } = await new Promise((resolve) => {
-      exec(CLI_NAME, args, { env, timeout: 90000, maxBuffer: 16 * 1024 * 1024 }, (execErr, stdout) => {
+      exec(file, execArgs, { env, timeout: 90000, maxBuffer: 16 * 1024 * 1024 }, (execErr, stdout) => {
         const o = (stdout || '').trim();
         resolve({ ok: !execErr && !!o && !/failed|recvWindow|Way too many/i.test(o), out: o, err: execErr });
       });

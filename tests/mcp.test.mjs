@@ -72,8 +72,13 @@ test('写工具无 confirm → 全部抛错（place_order/set_stop_loss/cancel_o
 });
 test('place_order 带 confirm → 组装 argv 并成功', async () => {
   mcp.__setCliExecForTest((file, args, opts, cb) => {
-    assert.equal(file, process.platform === 'win32' ? 'binance-cli.cmd' : 'binance-cli');
-    assert.deepEqual(args, ['futures-usds', 'new-order', '--symbol', 'BTCUSDT', '--side', 'BUY', '--type', 'MARKET', '--quantity', '1']);
+    if (process.platform === 'win32') {
+      assert.equal(file, 'cmd.exe');
+      assert.deepEqual(args, ['/c', 'binance-cli.cmd', 'futures-usds', 'new-order', '--symbol', 'BTCUSDT', '--side', 'BUY', '--type', 'MARKET', '--quantity', '1']);
+    } else {
+      assert.equal(file, 'binance-cli');
+      assert.deepEqual(args, ['futures-usds', 'new-order', '--symbol', 'BTCUSDT', '--side', 'BUY', '--type', 'MARKET', '--quantity', '1']);
+    }
     cb(null, JSON.stringify({ orderId: 123, clientOrderId: 'x', status: 'NEW' }));
   });
   try {

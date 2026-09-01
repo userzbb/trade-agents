@@ -88,6 +88,7 @@ This skill **strongly depends on the external `/binance` skill** (user-level, `n
 | `plan.mjs --target X --days N --equity Y` | target math validation + 3 plans (A稳健/B延续/C激进) | "目标/多久赚 X"; monthly |
 | `summary.mjs weekly\|monthly` | 周报/月报 generator (auto md + archive) | Sundays / 1st; "周报/月报" |
 | `vector.mjs query "<text>" [--top N] [--filter review\|reference]` | local BM25 retrieval over retrospectives + strategy KB (no network) | 复盘相似案例; "找一下类似复盘" |
+| `engines.mjs` | three-engine status dashboard (Freqtrade/Hummingbot//binance) in one Chinese table | "看下三引擎状态/统一看板"; session start |
 
 Known issue: `position.mjs` can hang on proxy jitter (>60s no output → kill it); fallback: `export HTTPS_PROXY=... HTTP_PROXY=...` then manually `binance-cli futures-usds account-information-v2` with 2–4 retries.
 

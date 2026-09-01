@@ -85,3 +85,4 @@ const tiers = { T1: 0, T2: 0, T3: 0 };
 Object.values(snap.coins).forEach((c) => tiers[c.tier]++);
 console.log(`\n=== 币种分类快照已刷新 → D:\\trade\\coin-classification.json + SQLite ===`);
 console.log(`T1(高流动性低波动): ${tiers.T1} 个 | T2(中等): ${tiers.T2} 个 | T3(高波动/低流动性): ${tiers.T3} 个`);
+console.log(`\n💡 对候选做深查（OI/taker/账户LS 确认趋势与主动盘）：node coin.mjs <SYMBOL>`);
