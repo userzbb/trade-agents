@@ -62,6 +62,22 @@ MSYS_NO_PATHCONV=1 docker exec freqtrade freqtrade hyperopt \
 - **Read-only, no CONFIRM**: `ping`, `status`, `balance`, backtests, Hyperopt (analysis only).
 - Intra-bot order management (stoploss, trailing) is handled by Freqtrade's engine per the strategy.
 
+## Force entry / exit (agent execution; requires `force_entry_enable: true`)
+
+The primary injection path: the agent computes an S1-S6 signal and **force-enters** a leveraged long/short on the running bot; force-exits by trade id. **CONFIRM required** (strategy-level op).
+
+```bash
+# 开仓（dry-run 已实测；带 enter_tag + leverage）
+curl -s -u freqtrader:hb_p1_ft_2026 -H "Content-Type: application/json" \
+  -d '{"pair":"BTC/USDT:USDT","side":"long","stakeamount":"100","entry_tag":"S1-test","leverage":20}' \
+  http://127.0.0.1:8080/api/v1/forceenter
+# 平仓（按 trade_id）
+curl -s -u freqtrader:hb_p1_ft_2026 -H "Content-Type: application/json" \
+  -d '{"tradeid":"1"}' http://127.0.0.1:8080/api/v1/forceexit
+```
+
+Config must enable `force_entry_enable: true` and `order_types.entry='limit'` for buy-at-price; stop/TP are strategy-managed (`stoploss`/`minimal_roi`/`trailing_stop`) or exchange-side (`stoploss_on_exchange` → real STOP_MARKET/TAKE_PROFIT_MARKET on Binance). Read state via `/status`, `/profit_all`, `/trades`.
+
 ## Message WebSocket (live signal stream)
 
 For real-time push instead of polling:

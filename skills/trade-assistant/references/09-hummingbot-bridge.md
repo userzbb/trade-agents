@@ -43,6 +43,28 @@ Write (CONFIRM): create/start/stop bots, deploy controllers, place/close orders,
 3. Deploy/start via MCP tools; monitor `status` / `portfolio`.
 4. Query-only (status/PnL) needs no CONFIRM; **paper-trade results MUST be labeled 模拟盘非实盘**.
 
+## Live executors (agent execution via `manage_executors`)
+
+The atomic execution path: create a position/grid/DCA/order executor with a full config (entry price + triple-barrier TP/SL). **CONFIRM required** for create/stop.
+
+```json
+// position_executor 配置（含指定价 + 止盈止损三重屏障）— 经 MCP manage_executors 或 REST /executors/
+{
+  "executor_type": "position_executor",
+  "executor_config": {
+    "connector_name": "binance_perpetual_paper_trade",
+    "trading_pair": "BTC-USDT",
+    "side": "long",
+    "amount": "0.001",
+    "entry_price": "77000",
+    "leverage": 20,
+    "triple_barrier_config": { "stop_loss": 0.02, "take_profit": 0.05, "time_limit": 3600, "trailing_stop": { "activation_price": 0.03, "trailing_delta": 0.01 } }
+  }
+}
+```
+
+Grid: `grid_executor` (`start_price`/`end_price`/`total_amount_quote`/levels) — each fill spawns an opposite TP order; `keep_position` as the risk mechanism. TP/SL via `triple_barrier_config`. For Binance perps set position mode + leverage first (`set_account_position_mode_and_leverage`).
+
 ## CONFIRM scope
 
 - **Strategy-level ops need CONFIRM**: deploy/start/stop a bot, adjust controller params, force an order.

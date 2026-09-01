@@ -134,6 +134,7 @@ Rule of thumb + signal mapping in `references/00-core-playbook.md` §Three-Tool 
 
 ### C. Manual /binance workflow (CONFIRM execution)
 1. **Trade execution** (user wants to place): read playbook (ref 02) → `coin.mjs` capital/game side (gate 1) → `ta.mjs` technical timing (gate 2) → psychology check (ref 06 §5) → `pyramid.mjs` batch structure → `solve.mjs` stops/TPs → full plan table + 模式A/B → wait for `CONFIRM` → execute via binance-cli → update log.
+2. **Atomic entry+stop+TP** (one call, less race): on CONFIRM, `binance-cli futures-usds place-multiple-orders` with entry (limit) + `new-algo-order` STOP_MARKET + TAKE_PROFIT_MARKET in one batch; large entries use `algo` TWAP to split.
 
 ### D. Freqtrade workflow (direction strategy lab + execution; see `08-freqtrade-bridge.md`)
 1. **回测/验证** ("回测这个策略 / 验证参数"): read `references/08` → Freqtrade REST: `download-data` if pair missing → `backtesting` → (if asked) `hyperopt` in background → **中文汇报**胜率/收益/回撤/参数，标注数据来源。只读，**免 CONFIRM**。结果亏损要如实报。
