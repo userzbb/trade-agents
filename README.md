@@ -24,12 +24,12 @@ mcp/
 # 1) 前置：/binance skill（强依赖）
 npx skills add binance/binance-skills-hub
 
-# 2) 安装本插件（三选一）
-#   a. 本会话临时启用：claude --plugin-dir D:/claude-dev/agents
-#   b. 会话内 /plugin → Add from folder → 选 D:\claude-dev\agents
-#   c. 发布后经 marketplace：
-#      claude plugin marketplace add https://github.com/userzbb/trade-agents
-#      claude plugin install trade-agents
+# 2) 安装本插件
+#   GitHub marketplace（推荐）：
+#     claude plugin marketplace add https://github.com/userzbb/trade-agents
+#     claude plugin install trade-agents
+#   本地临时：claude --plugin-dir D:/claude-dev/agents
+#   或会话内 /plugin → Add from folder → 选 D:\claude-dev\agents
 
 # 3) 数据层配置（默认 D:/trade）
 export TRADE_HOME=D:/trade
