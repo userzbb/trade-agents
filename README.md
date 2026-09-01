@@ -1,6 +1,6 @@
 # trade-agents
 
-**单插件即全部功能** —— Binance U 本位永续合约交易系统的唯一安装入口。skill（分析大脑）+ MCP（行情/下单）+ agents（自治子任务）+ BM25 向量检索全部内置，外部仅强依赖 `/binance` skill。
+**单插件即全部功能** —— Binance U 本位永续合约交易系统的唯一安装入口。skill（分析大脑）+ MCP（行情/下单）+ agents（自治子任务）+ BM25 向量检索全部内置。**外部强依赖**：`/binance` skill（数据/执行）+ **Freqtrade**（方向性回测/执行）+ **Hummingbot**（网格/做市/套利）——后两个执行引擎为必需组件，部署见下文。
 
 > 前身是 `trade-plugin`（已退役），其 skill 与 MCP 已并入本插件。Skill 层为英文（效率优先），**所有给用户的输出为中文**。
 
@@ -31,6 +31,21 @@ export BINANCE_PROXY=http://127.0.0.1:7897
 
 首次使用前：`binance-cli profile create` 配置 API 密钥（profile `my-main`）。
 
+## 部署流程（端到端）
+
+整个系统 = **插件（控制面）+ 两个执行引擎 + `/binance` 数据层**。按顺序部署：
+
+| 步骤 | 做什么 | 详见 |
+|---|---|---|
+| ① 基础依赖 | Node ≥26、Docker Desktop、Python ≥3.11 + uv、Clash 代理 `127.0.0.1:7897` | [依赖与环境要求](#依赖与环境要求) |
+| ② 部署 **Freqtrade** | clone → `docker compose up -d`（dry-run，REST 8080） | [Freqtrade 部署](#freqtrade方向性回测执行) |
+| ③ 部署 **Hummingbot** | clone api → `docker compose up -d`；clone mcp → `uv sync` + `.env` | [Hummingbot 部署](#hummingbot网格做市套利执行) |
+| ④ 配置环境变量 | `HUMMINGBOT_MCP_DIR` / `HUMMINGBOT_API_*` | [环境变量](#环境变量插件-mcpjson-引用) |
+| ⑤ 安装插件 | `claude plugin marketplace add …` + `install`（或本地 `--plugin-dir`） | [安装](#安装) |
+| ⑥ 验证 | `curl 8080/api/v1/ping`、Hummingbot MCP initialize、`claude mcp list` 见 `hummingbot-mcp` | 各引擎小节 |
+
+> 插件 `.mcp.json` 已注册 `binance-trade` + `hummingbot-mcp` 两个 MCP server；Freqtrade 走 REST（`binance-orchestrator` 路由调用）。引擎未部署时相关能力不可用，但插件其余部分（分析/复盘/manual）照常。
+
 ## 依赖与环境要求
 
 | 依赖 | 版本 / 来源 | 作用 | 安装方式 |
@@ -44,16 +59,22 @@ export BINANCE_PROXY=http://127.0.0.1:7897
 | 数据层 | `D:\trade`（可覆盖） | SQLite（`data/trade.db`）+ 复盘归档（`retrospectives/`） | `export TRADE_HOME=D:/trade`（目录可自动创建） |
 | Docker Desktop | Hyper-V 后端 | 运行 Freqtrade / Hummingbot 引擎容器 | Docker Desktop 官网；代理设 GUI（Settings→Resources→Proxies→`127.0.0.1:7897`） |
 | Python ≥3.11 + uv | — | Hummingbot MCP server 运行环境 | `uv` 官方安装器 |
-| **Freqtrade**（可选） | `E:\trade-bots\freqtrade` | 方向性回测/Hyperopt/执行（REST `127.0.0.1:8080`） | Docker：`docker compose up -d`（详见"交易引擎部署方案"） |
-| **Hummingbot**（可选） | `E:\trade-bots\hummingbot` | 网格/做市/套利执行（API `8000` + MCP） | Docker + uv（详见"交易引擎部署方案"） |
+| **Freqtrade**（必需·强依赖） | [freqtrade/freqtrade](https://github.com/freqtrade/freqtrade) · `E:\trade-bots\freqtrade` | 方向性回测/Hyperopt/执行（REST `127.0.0.1:8080`） | 见 [Freqtrade 部署](#freqtrade方向性回测执行) |
+| **Hummingbot**（必需·强依赖） | [hummingbot/hummingbot](https://github.com/hummingbot/hummingbot) · [hummingbot/mcp](https://github.com/hummingbot/mcp) · `E:\trade-bots\hummingbot` | 网格/做市/套利执行（API `8000` + MCP） | 见 [Hummingbot 部署](#hummingbot网格做市套利执行) |
 
 **向量检索（`vector.mjs`）零外部依赖**：不是外部向量数据库，是本地 BM25 检索（中文字符 bigram 分词 + 倒排索引），纯 Node 实现。**无需安装任何数据库、无需 API key、无需外部模型**；索引自动构建到 `${TRADE_HOME}/vector-index.json`（`D:/trade/vector-index.json`），源文件变化时自动重建。详见 [向量检索](docs/vector-search.md)。
 
 **可选依赖（binance-orchestrator 增强）**：信息面 / 信号 / 博弈面 / 链上查询走 `crypto-market-rank`、`binance-trading-signal`、`binance-wallet-tracker`、`query-token-*` 等用户级 skill，按各 skill 的安装方式（通常 `npx skills add <org>/<repo>`）安装；缺失时 orchestrator 会降级提示，不影响核心 skill/MCP。
 
-## 交易引擎部署方案（可选，Freqtrade + Hummingbot）
+## 交易引擎部署方案（必需 · Freqtrade + Hummingbot）
 
-插件是**控制面**，调用两个独立部署的执行引擎。均为 P1 模拟盘/方向性验证，零真实 API key。
+插件是**控制面**，调用两个独立部署的执行引擎。引擎是**必需强依赖**——不部署则网格/做市/套利与方向性回测执行不可用。
+
+**官方仓库**：
+- **Freqtrade**：https://github.com/freqtrade/freqtrade （文档 https://www.freqtrade.io/ ）
+- **Hummingbot**：https://github.com/hummingbot/hummingbot （API https://github.com/hummingbot/hummingbot-api · MCP https://github.com/hummingbot/mcp · 文档 https://docs.hummingbot.org/ ）
+
+部署按官方流程（P1 用模拟盘/方向性验证，零真实 API key；实盘需各自配独立子账户 key）。
 
 ### 环境变量（插件 `.mcp.json` 引用）
 
@@ -94,12 +115,12 @@ P1 用 `binance_perpetual_paper_trade` 模拟盘（零 key）；实盘需 `hbot 
 ```
 trade-agents/
 ├── skills/trade-assistant/   分析大脑（唯一真相源）
-│   ├── SKILL.md              英文指令，双支柱：文档生成 · binance 编排
-│   ├── references/           策略知识库（8 个英文文件，含中文输出模板）
+│   ├── SKILL.md              英文指令，三工具编排：/binance · Freqtrade · Hummingbot
+│   ├── references/           策略知识库（10 个英文文件，含三工具路由与引擎桥）
 │   └── scripts/              分析工具箱（14 个零依赖脚本，含 vector.mjs）
 ├── agents/
 │   ├── retrospective-writer      复盘/周报/月报文档生成 agent
-│   └── binance-orchestrator     binance 编排 agent（写操作交回 CONFIRM）
+│   └── binance-orchestrator     binance 编排 agent（三工具路由，写操作交回 CONFIRM）
 └── mcp/
     └── binance-mcp-server    行情/账户 MCP + 下单（confirm:true）
 ```
