@@ -14,17 +14,17 @@ Single installable Claude Code plugin for the Binance USDT-M perpetual futures s
 - MCP: `mcp/binance-mcp-server.mjs` + `.mcp.json`
 - Docs: `docs/` — architecture · skill-guide · agents · vector-search · usage · development · conventions
 - Data layer: `D:\trade` (`TRADE_HOME`) — SQLite + retrospectives + plans
-- Mirror (must stay in sync): `D:\claude-dev\skills\trade-assistant`
+- Mirror: `D:\claude-dev\skills\trade-assistant` (**deprecated, do not sync**)
 
 ## Three iron rules
 
 1. **Language boundary.** Skill-layer content (SKILL.md, references, script comments, agent prompts, this file) = English. **ALL user-facing output** (复盘/周报/月报/计划 doc bodies, conversation tables, summaries, error messages) = **Chinese**. Never produce user-facing text in English.
-2. **Single source of truth.** The skill lives in `skills/trade-assistant/`. After any change there, sync the mirror `D:\claude-dev\skills\trade-assistant` and verify with `diff -rq`. Never edit the mirror as the source.
+2. **Single source of truth.** The skill lives in `skills/trade-assistant/`. The old mirror `D:\claude-dev\skills\trade-assistant` is **deprecated — do not sync or maintain it**.
 3. **Writes go through CONFIRM.** Any order/close/cancel/leverage/transfer must first show a complete plan and wait for the user's 模式 A/B choice + `CONFIRM`. Agents never execute writes.
 
 ## Common tasks
 
-- **Change a strategy rule** → edit `references/<NN>-*.md` (English), update the SKILL.md references guide table if filenames change, sync mirror.
+- **Change a strategy rule** → edit `references/<NN>-*.md` (English), update the SKILL.md references guide table if filenames change.
 - **Add a script** → `skills/trade-assistant/scripts/` (zero-dep, comments English, user output Chinese); add a row to the toolbox tables in SKILL.md + `docs/skill-guide.md` + `docs/usage.md`.
 - **Add an agent** → `agents/<kebab-name>.md` with frontmatter (`name`/`description`/`model: inherit`/`color`/`tools`) + a `When to invoke` section; validate with `validate-agent.sh`; update `docs/agents.md`.
 - **Edit the MCP server** → `mcp/binance-mcp-server.mjs`; keep `confirm: true` on every write tool.

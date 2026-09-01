@@ -3,7 +3,7 @@
 > 日期：2026-09-02 · 状态：待审阅
 > 目标：在 `D:\claude-dev\agents\trade-agents` 插件内，最大化利用三个强依赖工具（Freqtrade / Hummingbot / /binance+cli）的功能，通过三层能力（验证 / 执行 / 监控）增强现有三工具编排。
 > **开发范围（唯一开发对象）**：`D:\claude-dev\agents\trade-agents`。
-> **镜像 `D:\claude-dev\skills\trade-assistant` 与 `plugins/trade-plugin` 均已弃用**：镜像仅作 skill 层的被动同步输出（插件防漂移铁律要求 `diff -rq` 校验），不开发、不维护为独立项目；`plugins/trade-plugin` 完全不碰。
+> **镜像 `D:\claude-dev\skills\trade-assistant` 与 `plugins/trade-plugin` 均已弃用**：**镜像完全不用管**（不同步、不维护）；`plugins/trade-plugin` 完全不碰。
 
 ## 1. 背景
 
