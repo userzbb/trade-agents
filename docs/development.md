@@ -7,9 +7,8 @@
 ```
 trade-agents/
 ├── .claude-plugin/
-│   └── plugin.json          # 插件清单（name/version/description/keywords）
-├── .mcp.json                # MCP 注册（${CLAUDE_PLUGIN_ROOT} 指向本插件根）
-├── marketplace.json         # 发布用 marketplace 清单（source: "."）
+│   ├── plugin.json          # 插件清单（name/version/description/keywords）
+│   └── marketplace.json     # 发布用 marketplace 清单（source: 完整仓库 URL）
 ├── README.md                # 入口 README（链接到 docs/）
 ├── CLAUDE.md                # 给 AI 看的开发文档（AI 进仓库自动加载）
 ├── docs/                    # 说明文档

@@ -1,0 +1,14 @@
+{
+  "name": "trade-marketplace",
+  "description": "Binance USDT-M perpetual futures trading system: trade-agents single plugin (skill + MCP + agents + BM25 vector retrieval)",
+  "owner": {
+    "name": "zizim"
+  },
+  "plugins": [
+    {
+      "name": "trade-agents",
+      "source": "https://github.com/userzbb/trade-agents",
+      "description": "Binance USDT-M perpetual futures single plugin: 复盘/周报/月报 document-generation agents + binance orchestration + market-data/order MCP + BM25 vector retrieval; strongly depends on /binance skill"
+    }
+  ]
+}
