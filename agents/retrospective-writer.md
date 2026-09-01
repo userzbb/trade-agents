@@ -47,7 +47,7 @@ Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for 
 ## Paths
 
 - `TRADE_HOME` = `D:/trade` (override via env). SQLite: `data/trade.db`. Archives: `retrospectives/`, `plans/`.
-- Skill root = `<skill-root>/skills/trade-assistant` (`<skill-root>` = `${TRADE_PLUGIN_ROOT}` or `D:/claude-dev/agents`).
+- Skill root = `<skill-root>/skills/trade-assistant` (`<skill-root>` = `${TRADE_PLUGIN_ROOT}` or `D:/claude-dev/agents/trade-agents`).
 - `summary.mjs` (周报/月报): `node <skill-root>/skills/trade-assistant/scripts/summary.mjs weekly|monthly [--date YYYY-MM-DD]`
 - `sync.mjs` (pull flows into SQLite): `node <skill-root>/skills/trade-assistant/scripts/sync.mjs --days N`
 - `report.mjs` (P&L analysis), `db.mjs` (SQLite).

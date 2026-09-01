@@ -19,7 +19,7 @@ claude plugin install trade-agents
 
 ```bash
 # 或本地临时启用
-claude --plugin-dir D:/claude-dev/agents
+claude --plugin-dir D:/claude-dev/agents/trade-agents
 # 或会话内 /plugin → Add from folder → 选择 D:\claude-dev\agents
 ```
 

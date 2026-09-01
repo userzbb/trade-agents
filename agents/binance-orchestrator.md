@@ -59,7 +59,7 @@ Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for 
 
 ## Path Resolution (no hardcoded absolute paths)
 
-- `<skill-root>` = `${TRADE_PLUGIN_ROOT}` if set, else `D:/claude-dev/agents`.
+- `<skill-root>` = `${TRADE_PLUGIN_ROOT}` if set, else `D:/claude-dev/agents/trade-agents`.
 - Plugin skill root = `<skill-root>/skills/trade-assistant`; toolbox scripts = `<skill-root>/skills/trade-assistant/scripts/*.mjs`.
 - External skills (crypto-market-rank, binance-wallet-tracker, binance-trading-signal, query-token-*) are user-level skills at **no stable path**. Resolve each at runtime: prefer a matching env var if the plugin defines one (e.g. `CRYPTO_MARKET_RANK_CLI`); otherwise Read that skill's SKILL.md to locate its CLI; if the skill is not installed, say so and skip the provider — never invent a path.
 

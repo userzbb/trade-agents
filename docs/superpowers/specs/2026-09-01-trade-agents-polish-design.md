@@ -40,7 +40,7 @@
   1. 优先 `CRYPTO_MARKET_RANK_CLI` env；
   2. 否则 agent 自行 Read `crypto-market-rank` skill 的 SKILL.md 定位实际 CLI；
   3. 不写死任何绝对路径。
-- 新增「路径解析」小节：脚本路径统一写 `<skill-root>/scripts/xxx.mjs`，`skill-root` = `TRADE_PLUGIN_ROOT` env（兜底 `D:/claude-dev/agents`）。消除第 54/71/72 行字面量。
+- 新增「路径解析」小节：脚本路径统一写 `<skill-root>/scripts/xxx.mjs`，`skill-root` = `TRADE_PLUGIN_ROOT` env（兜底 `D:/claude-dev/agents/trade-agents`）。消除第 54/71/72 行字面量。
 - 同步在 `docs/agents.md` 反映 agent 职责变化（如适用）。
 
 ### 3.2 MCP server（mcp/binance-mcp-server.mjs）

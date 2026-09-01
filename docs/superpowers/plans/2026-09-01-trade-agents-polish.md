@@ -565,7 +565,7 @@ Expected: 1 个 test PASS。
 
 - [ ] **Step 1: 跑全部单测**
 
-Run: `cd /d/claude-dev/agents && node --test tests/*.test.mjs`（注意：Node v26/Windows 下 `node --test tests/` 目录参数会被解析为模块路径而失败，须用 glob 或显式文件列表）
+Run: `cd /d/claude-dev/agents/trade-agents && node --test tests/*.test.mjs`（注意：Node v26/Windows 下 `node --test tests/` 目录参数会被解析为模块路径而失败，须用 glob 或显式文件列表）
 Expected: 全部 PASS（19 个：scripts-lib 7 + mcp 10 + solve 1 + ta 1）。
 
 - [ ] **Step 2: 全部脚本语法检查**
@@ -604,7 +604,7 @@ Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for 
 ```
 ## Path Resolution (no hardcoded absolute paths)
 
-- `<skill-root>` = `${TRADE_PLUGIN_ROOT}` if set, else `D:/claude-dev/agents`.
+- `<skill-root>` = `${TRADE_PLUGIN_ROOT}` if set, else `D:/claude-dev/agents/trade-agents`.
 - Plugin skill root = `<skill-root>/skills/trade-assistant`; toolbox scripts = `<skill-root>/skills/trade-assistant/scripts/*.mjs`.
 - External skills (crypto-market-rank, binance-wallet-tracker, binance-trading-signal, query-token-*) are user-level skills at **no stable path**. Resolve each at runtime: prefer a matching env var if the plugin defines one (e.g. `CRYPTO_MARKET_RANK_CLI`); otherwise Read that skill's SKILL.md to locate its CLI; if the skill is not installed, say so and skip the provider — never invent a path.
 ```
@@ -630,7 +630,7 @@ Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for 
 将决策表后第 74 行的旧注记：
 
 ```
-`TRADE_PLUGIN_ROOT` (default `D:/claude-dev/agents`) and `TRADE_HOME` (default `D:/trade`) are overridable via env — prefer them over the literal paths above when set.
+`TRADE_PLUGIN_ROOT` (default `D:/claude-dev/agents/trade-agents`) and `TRADE_HOME` (default `D:/trade`) are overridable via env — prefer them over the literal paths above when set.
 ```
 
 改为：
@@ -650,7 +650,7 @@ Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for 
 改为：
 
 ```
-- Skill root = `<skill-root>/skills/trade-assistant` (`<skill-root>` = `${TRADE_PLUGIN_ROOT}` or `D:/claude-dev/agents`).
+- Skill root = `<skill-root>/skills/trade-assistant` (`<skill-root>` = `${TRADE_PLUGIN_ROOT}` or `D:/claude-dev/agents/trade-agents`).
 ```
 
 > **注意**：`<skill-root>` 已重定义为插件根。该文件内其余 `node <skill-root>/scripts/xxx.mjs` 引用（summary/sync/vector/plan 等，约 6 处）必须同步改为 `node <skill-root>/skills/trade-assistant/scripts/xxx.mjs`，否则解析到错误路径（Task 8 质量审查发现，已修复）。
@@ -732,7 +732,7 @@ Expected: `10`（无报错）。
 Run:
 
 ```bash
-cd /d/claude-dev/agents
+cd /d/claude-dev/agents/trade-agents
 cp skills/trade-assistant/SKILL.md /d/claude-dev/skills/trade-assistant/SKILL.md
 cp skills/trade-assistant/references/*.md /d/claude-dev/skills/trade-assistant/references/
 cp skills/trade-assistant/scripts/*.mjs /d/claude-dev/skills/trade-assistant/scripts/
@@ -770,7 +770,7 @@ Dispatch `plugin-dev:skill-reviewer`（Agent 工具），prompt：评审 `skills
 
 - [ ] **Step 5: 复检后回归**
 
-Run: `cd /d/claude-dev/agents && node --test tests/*.test.mjs`
+Run: `cd /d/claude-dev/agents/trade-agents && node --test tests/*.test.mjs`
 Expected: 全部 PASS。
 
 ## Task 12: 最终验证 + 一次干净提交
@@ -781,7 +781,7 @@ Expected: 全部 PASS。
 
 Run:
 ```bash
-cd /d/claude-dev/agents
+cd /d/claude-dev/agents/trade-agents
 node --test tests/*.test.mjs
 for f in skills/trade-assistant/scripts/*.mjs mcp/binance-mcp-server.mjs; do node --check "$f" || echo "FAIL $f"; done
 diff -rq skills/trade-assistant /d/claude-dev/skills/trade-assistant
@@ -793,7 +793,7 @@ Expected: 19 个 test 全 PASS、无 FAIL、diff 仅分发专属差异、`10`。
 
 Run:
 ```bash
-cd /d/claude-dev/agents
+cd /d/claude-dev/agents/trade-agents
 git add -A
 git status
 git commit -m "polish: agents trigger/description + path resolution, MCP robustness, script regression tests, evals 6->10, mirror sync"

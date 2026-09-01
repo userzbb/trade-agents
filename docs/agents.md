@@ -66,7 +66,7 @@ tools: ["Read", "Write", "Grep", "Glob", "Bash"]
 ### 关键路径
 
 - `TRADE_HOME` = `D:/trade`（env 可覆盖）；SQLite `data/trade.db`；归档 `retrospectives/`。
-- skill 根 = `<skill-root>/skills/trade-assistant`（`<skill-root>` = `${TRADE_PLUGIN_ROOT}` 或 `D:/claude-dev/agents`）。
+- skill 根 = `<skill-root>/skills/trade-assistant`（`<skill-root>` = `${TRADE_PLUGIN_ROOT}` 或 `D:/claude-dev/agents/trade-agents`）。
 - 向量检索：`node <skill>/scripts/vector.mjs query "<文本>" --filter review --top 5`。
 - 环境事实（代理/限流/时钟漂移）读 SKILL.md，不复制。
 
