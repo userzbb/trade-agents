@@ -75,7 +75,7 @@
 
 ### 3.4 evals 扩展
 
-- `evals/evals.json` 6 → 9 条，新增：
+- `evals/evals.json` 6 → 10 条，新增：
   1. 技术面查询（"XX 的技术面怎么样" → ta.mjs + 中文汇总 + 标注时间框架）
   2. 金字塔加仓（pyramid.mjs）
   3. 月报（summary.mjs monthly + plan.mjs 校验目标）
@@ -123,7 +123,7 @@
 - [ ] `validate-agent.sh` 对两个 agent 无 error
 - [ ] MCP server 单测全绿，覆盖 cli() 解析 / required / 串行
 - [ ] scripts 单测全绿
-- [ ] evals 9 条，结构完整
+- [ ] evals 10 条，结构完整
 - [ ] 源/镜像 `diff -rq` 仅剩分发专属文件差异
 - [ ] `node --check` 全部脚本通过
 - [ ] 主 README 含完整「依赖与环境要求」小节（含向量检索零依赖说明）
