@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "binance-trade": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/binance-mcp-server.mjs"],
+      "env": {
+        "BINANCE_PROXY": "http://127.0.0.1:7897"
+      }
+    }
+  }
+}

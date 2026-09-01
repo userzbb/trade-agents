@@ -1,0 +1,41 @@
+{
+  "skill_name": "trade-assistant",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "现在呢",
+      "expected_output": "运行 position.mjs 查询账户/持仓/挂单，输出持仓表（含盈亏、强平距离）、挂单状态；若有持仓则对照日志关键位给出结构判断；无任何下单动作",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "看看今天盘面有什么机会",
+      "expected_output": "运行 scan.mjs 输出大盘基调 + 多空候选池，按 01 文件的 S1-S6 信号给候选标注信号类型，不直接下单，提示可对候选跑 coin.mjs 详查",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "ARB 这单我觉得能到 0.118，帮我挂个止盈",
+      "expected_output": "先运行 position.mjs 确认实际持仓数量与成本，再运行 prob.mjs 测算触达 0.118 的概率；输出完整计划表（所有订单参数/占用资金/预期收益/风险说明/胜率测算），最后给出模式A(手动下单)与模式B(CONFIRM后代执行)两种方式供用户选择；未获 CONFIRM 前不执行任何下单",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "我想开多单 ARB，帮我定一下止损止盈",
+      "expected_output": "必须运行 solve.mjs（期望值网格求解器）而非拍脑袋给固定参数；输出需包含：币种分类（mainstream/alt/manipulator）、模型可信度折扣、插针缓冲、期望值最优的止损止盈组合、折后胜率、单笔最大亏损与 6% 红线检查；然后输出完整计划 + 模式A/B 选择",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "复盘 ARB 这一单",
+      "expected_output": "委派 retrospective-writer agent 或直接按 references/07 模板生成复盘：先 sync.mjs 保证 SQLite 为真源，拉该仓盈亏/手续费/资金费/币种分级；vector.mjs 检索相似复盘写入参考区块；生成中文 复盘_起始-结束_币种.md 到 D:/trade/retrospectives 并 git commit；输出中文摘要",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "查一下 BTC 的资金费率",
+      "expected_output": "走 /binance 生态编排：binance-cli futures-usds 拉资金费率（带代理、限流纪律），中文表格汇总并标注数据来源；纯查询无需 CONFIRM；不做任何下单动作",
+      "files": []
+    }
+  ]
+}
