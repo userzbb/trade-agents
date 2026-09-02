@@ -28,8 +28,18 @@ claude --plugin-dir D:/claude-dev/agents/trade-agents
 # 或会话内 /plugin → Add from folder → 选择 D:\claude-dev\agents\trade-agents
 ```
 
+> **Windows 说明（先读）**：本项目文档里的命令以 **Git Bash（MSYS）** 为准编写 —— `/e/...` = `E:\...`、`export A=B`、`MSYS_NO_PATHCONV=1` 都是 Git Bash 语法，**PowerShell / cmd 里无效**。请装 [Git for Windows](https://git-scm.com/)，用其 Git Bash 执行各 `bash` 代码块。
+>
+> 要让 **Claude Code / 插件脚本**（如 `.mcp.json` 的 `${HUMMINGBOT_MCP_DIR}`）读到变量：必须设成 **Windows 用户环境变量** —— shell 里临时 `export` 只对当前进程生效，Claude Code 从别的终端/桌面启动就读不到。用下面 `setx`（永久；设置后**重开 Claude Code** 才生效），或 系统属性 → 高级系统设置 → 环境变量。
+
+```powershell
+# 设成 Windows 用户环境变量（推荐，永久生效）
+setx TRADE_HOME "D:\trade"
+setx BINANCE_PROXY "http://127.0.0.1:7897"
+```
+
 ```bash
-# 数据层配置（默认 D:/trade）
+# 或 Git Bash：仅当前会话临时生效
 export TRADE_HOME=D:/trade
 export BINANCE_PROXY=http://127.0.0.1:7897
 ```
@@ -84,12 +94,19 @@ export BINANCE_PROXY=http://127.0.0.1:7897
 
 ### 环境变量（插件 `.mcp.json` 引用）
 
-```bash
-export HUMMINGBOT_MCP_DIR=/e/trade-bots/hummingbot/mcp     # Hummingbot MCP 仓库路径
-export HUMMINGBOT_API_URL=http://localhost:8000            # Hummingbot API
-export HUMMINGBOT_API_USERNAME=admin
-export HUMMINGBOT_API_PASSWORD=hb_p1_paper_2026
+`.mcp.json` 里 `hummingbot-mcp` 启动时由 **Claude Code 自身进程环境** 展开 `${HUMMINGBOT_MCP_DIR}`（见 `.mcp.json:13`）——所以这 4 个变量请设成 **Windows 用户环境变量**，不要在某个 shell 里临时 `export`（Claude Code 从别处启动就丢）：
+
+```powershell
+# 永久生效；设置后需完全重开 Claude Code
+setx HUMMINGBOT_MCP_DIR "E:\trade-bots\hummingbot\mcp"
+setx HUMMINGBOT_API_URL "http://localhost:8000"
+setx HUMMINGBOT_API_USERNAME "admin"
+setx HUMMINGBOT_API_PASSWORD "hb_p1_paper_2026"
 ```
+
+> 仅当前会话的临时替代（只对当前终端里新起的进程可见）：
+> - PowerShell：`$env:HUMMINGBOT_MCP_DIR = 'E:\trade-bots\hummingbot\mcp'`（其余类推）
+> - Git Bash：`export HUMMINGBOT_MCP_DIR=/e/trade-bots/hummingbot/mcp` —— `/e/` 是 Git Bash 对 `E:\` 的 MSYS 写法，**PowerShell/cmd 无效**（会被当成相对路径）。
 
 ### Freqtrade（方向性回测/执行）
 

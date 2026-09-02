@@ -34,10 +34,11 @@ Env facts (official):
 ## Backtest (official data tools; read-only, no CONFIRM)
 
 ```bash
+# Git Bash (MSYS) commands — /e/ = E:\ ; cd + official .sh require Git Bash on Windows
 cd /e/trade-bots/nfi
 # download history via official tools script (NostalgiaForInfinityData repo) — or freqtrade download-data for needed pairs+5m
-export TRADING_MODE=binance    # exchange
-export TRADING_MODE=futures    # spot/futures
+# official test-script env contract: pick ONE exchange mode, keep a single line (a second export below overwrites it)
+export TRADING_MODE=futures    # binance | futures — choose one; this deployment uses futures
 export TIMERANGE=20250101-20250601
 ./tests/backtests/backtesting-analysis-hunting.sh   # official backtest + analysis
 ```

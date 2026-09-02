@@ -51,6 +51,8 @@
 
 ## 部署流程（官方）
 
+> **本节与「回测」命令均为 Git Bash（MSYS）**：`cd /e/...`（=`E:\...`）、`cp`、`docker compose`、官方 `.sh` 脚本都须在 Git Bash 运行。PowerShell/cmd 用户把 `/e/trade-bots/...` 换成 `E:\trade-bots\...`，或直接用 Git Bash。
+
 ```bash
 # ① clone（独立目录，勿与现有 freqtrade 混放）
 cd /e/trade-bots
@@ -80,14 +82,14 @@ curl -s http://127.0.0.1:8989/api/v1/ping   # {"status":"pong"}（端口看 .env
 > NFI 历史数据从官方数据仓库下载（非 freqtrade download-data）。只读，免 CONFIRM。
 
 ```bash
+# Git Bash（MSYS）命令（本块要跑官方 .sh，须 Git Bash）
 cd /e/trade-bots/nfi
 # 下载回测所需历史数据（官方脚本，走 NostalgiaForInfinityData 仓库）
 # 脚本路径 tools/download-necessary-exchange-market-data-for-backtests.sh
 # （若数据量大/慢，可改为 freqtrade download-data 按需拉指定币+5m）
 
-# 官方测试脚本约定：
-export TRADING_MODE=binance   # 交易所
-export TRADING_MODE=futures   # spot/futures
+# 官方测试脚本约定（交易所模式二选一，只保留一行；本部署用 futures）
+export TRADING_MODE=futures   # binance 或 futures —— 勿两行连写（后一行会覆盖前一行）
 export TIMERANGE=20250101-20250601   # 回测区间
 ./tests/backtests/backtesting-analysis-hunting.sh   # 官方回测+分析脚本
 ```

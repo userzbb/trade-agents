@@ -118,7 +118,7 @@ tools: ["Read", "Grep", "Glob", "Bash"]
 
 ### 环境要点（权威版在 SKILL.md）
 
-- 调 binance-cli 前：`export HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897`
+- 调 binance-cli 前先设代理，且要**与命令同一次 Bash 调用内联**（跨调用 `export` 不保证保留）：`HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 binance-cli <cmd>`
 - `binance-cli` Windows = npm v1.3.0，profile `my-main`（**不要**用 /binance skill 里的 v2 安装脚本，不支持 Windows）
 - 不并行调用币安 API。
 - 路径一律运行时解析（`TRADE_PLUGIN_ROOT`/`CRYPTO_MARKET_RANK_CLI` env 或读对应 skill），不写死绝对路径。
