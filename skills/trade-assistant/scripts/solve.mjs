@@ -1,15 +1,19 @@
 // 止损/止盈参数求解器：网格扫描 + 蒙特卡洛首触模拟，输出期望值最优组合
 // 区分主流币（模型可信）与山寨/庄家币（模型打折 + 仓位折扣）
-// 用法: node solve.mjs <SYMBOL> [--entry 价] [--qty 张数] [--equity 336] [--posfrac 0.25] [--type auto|main|alt] [--hours 24]
-import { fapi, sleep, fmt, classify, readClassSnapshot, upsertClassSnapshot } from './_lib.mjs';
+// 用法: node solve.mjs <SYMBOL> [--entry 价] [--qty 张数] [--equity U] [--posfrac 小数] [--type auto|main|alt] [--hours 24]
+// 默认 equity/posfrac/杠杆/单笔红线取自 strategy-profile.json（无档案则用参考默认：336U / 0.25 / 20x / 6%）
+import { fapi, sleep, fmt, classify, readClassSnapshot, upsertClassSnapshot, strategyProfile } from './_lib.mjs';
 
 const SYM = process.argv[2];
-if (!SYM) { console.error('用法: node solve.mjs <SYMBOL> [--entry 价] [--qty 张数] [--equity 336] [--posfrac 0.25] [--type auto|main|alt] [--hours 24]'); process.exit(1); }
+if (!SYM) { console.error('用法: node solve.mjs <SYMBOL> [--entry 价] [--qty 张数] [--equity U] [--posfrac 小数] [--type auto|main|alt] [--hours 24]（默认参数取自 strategy-profile.json）'); process.exit(1); }
 const opt = (n, d) => { const i = process.argv.indexOf('--' + n); return i > 0 ? process.argv[i + 1] : d; };
 
-const equity = +opt('equity', 336);
-const posfrac = +opt('posfrac', 0.25);
+const prof = strategyProfile();
+const equity = +opt('equity', prof.equity);
+const posfrac = +opt('posfrac', prof.positionStyle.mainNormalPct);
 const hours = +opt('hours', 24);
+const leverage = prof.leverage;
+const redLinePct = prof.risk.perTradeCapPct;
 const typeArg = opt('type', 'auto');
 
 // --- 拉数据 ---
@@ -50,8 +54,8 @@ if (typeArg !== 'auto') {
 }
 
 // --- 保证金与数量 ---
-let qty = opt('qty') ? +opt('qty') : Math.floor((equity * posfrac * posMult * 20) / entry);
-const margin = (qty * entry) / 20;
+let qty = opt('qty') ? +opt('qty') : Math.floor((equity * posfrac * posMult * leverage) / entry);
+const margin = (qty * entry) / leverage;
 const minStopDist = Math.max(amp * 0.08, 1.5); // 插针缓冲：至少能扛住日振幅的 8%
 
 // --- 蒙特卡洛首触模拟（先碰止损=亏，先碰目标=赚，都没碰=平局）---
@@ -96,6 +100,9 @@ results.sort((a, b) => b.expectancy - a.expectancy);
 
 // --- 输出 ---
 console.log(`=== ${SYM} 止损/止盈求解器（${hours}h 蒙特卡洛首触, ${N} 路径）===`);
+if (prof._applied) {
+  console.log(`策略档案已应用: 权益 ${equity}U | 杠杆 ${leverage}x | 常态仓位 ${(posfrac*100).toFixed(0)}% | 单笔红线 ${(redLinePct*100).toFixed(0)}%（strategy-profile.json）`);
+}
 console.log(`现价 ${fmt(S0)} | 入场假设 ${fmt(entry)} | 24h振幅 ${amp.toFixed(0)}% | 成交 ${volM.toFixed(0)}M`);
 console.log(`币种分类: ${coinType} — ${note}`);
 console.log(`仓位折扣 x${posMult} → 实际仓位 ${(posfrac * posMult * 100).toFixed(0)}% (${margin.toFixed(1)}U 保证金, ${qty} 张, 名义 ${(qty * entry).toFixed(0)}U)`);
@@ -133,7 +140,7 @@ if (pstopThreshold) {
     console.log(`  止损挂 ${fmt(S0 * (1 - tight / 100))}（现价下方 ${tight.toFixed(2)}%）`);
     console.log('  这是"被碰到"概率极低的位置——适合高确定性持仓，把止损放在针够不着的地方。');
   } else {
-    console.log(`\n⚠ 30% 跌幅内找不到触达概率 ≤ ${(pstopThreshold * 100).toFixed(0)}% 的位置——该币波动太大，概率止损不适用，用资金止损（6%红线）。`);
+    console.log(`\n⚠ 30% 跌幅内找不到触达概率 ≤ ${(pstopThreshold * 100).toFixed(0)}% 的位置——该币波动太大，概率止损不适用，用资金止损（${(redLinePct * 100).toFixed(0)}%红线）。`);
   }
 }
 
@@ -142,9 +149,10 @@ console.log(`  止损: ${fmt(entry * (1 - best.sd / 100))} (-${best.sd.toFixed(1
 console.log(`  止盈: ${fmt(entry * (1 + best.td / 100))} (+${best.td.toFixed(1)}%)`);
 console.log(`  折后胜率 ${(best.effWin * 100).toFixed(0)}% | 单笔最大亏损 ${best.loss.toFixed(1)}U (${(best.loss / equity * 100).toFixed(1)}% 账户)`);
 console.log(`  期望值 ${best.expectancy.toFixed(1)}U/单`);
-if (best.loss / equity > 0.06) {
-  const maxQty = Math.floor((equity * 0.06) / (entry * best.sd / 100));
-  console.log(`  ⚠ 该组合单笔亏损超总资金6%红线`);
+if (best.loss / equity > redLinePct) {
+  const maxQty = Math.floor((equity * redLinePct) / (entry * best.sd / 100));
+  const redLineNote = prof._applied && redLinePct !== 0.06 ? '（策略档案覆盖，非参考默认 6%）' : '';
+  console.log(`  ⚠ 该组合单笔亏损超总资金${(redLinePct * 100).toFixed(0)}%红线${redLineNote}`);
   console.log(`  ✓ 符合红线的建议数量: ${maxQty} 张 (原 ${qty} 张, 仓位降至 ${(maxQty / qty * 100).toFixed(0)}%)`);
   console.log(`    缩仓后: 最大亏损 ${((entry * best.sd / 100) * maxQty).toFixed(1)}U | 止盈收益 ${((entry * best.td / 100) * maxQty).toFixed(1)}U`);
 }
