@@ -58,6 +58,8 @@ MSYS_NO_PATHCONV=1 docker exec freqtrade freqtrade hyperopt \
 
 ## CONFIRM scope
 
+> **All curl/docker commands in this file are for execution ONLY after the user approves (模式 A/B + typed `CONFIRM`).** Knowing these commands/credentials does not authorize running them without user approval (CLAUDE.md Iron Rule #0 / SKILL.md ABSOLUTE GATE).
+
 - **Strategy-level ops need CONFIRM**: deploy/start/stop a strategy, force an entry, change bot params. Show the full plan (strategy, pair, stake, stop/TP, risk) and wait for 模式 A/B + CONFIRM.
 - **Read-only, no CONFIRM**: `ping`, `status`, `balance`, backtests, Hyperopt (analysis only).
 - Intra-bot order management (stoploss, trailing) is handled by Freqtrade's engine per the strategy.

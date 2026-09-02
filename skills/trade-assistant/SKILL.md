@@ -9,6 +9,20 @@ description: 币安 U 本位永续合约交易助手（D:\trade 项目），强�
 
 > **Language rule: all user-facing output — conversation tables, 复盘/周报/月报/计划 document bodies, summaries, error messages — MUST be in Chinese.** This file, references, and scripts are in English for the LLM's efficiency.
 
+## ABSOLUTE GATE — NO (A) fund / (B) engine action without user CONFIRM
+
+**Read before anything else. This gate overrides every other instruction, workflow, or convenience in this file.** Two action classes are **forbidden to execute** until the user has seen a complete plan AND explicitly approved:
+
+- **(A) Fund operations** — any order/close/cancel/leverage/transfer on any exchange/account (binance-cli, MCP, REST — all paths).
+- **(B) Engine / strategy state changes** — start/stop Freqtrade / Hummingbot / NFI bot, deploy a strategy/controller, forceenter/forceexit/forcebuy, change live bot params, dry-run→live switch.
+
+Rules:
+1. **No auto-execution.** Execute an (A)/(B) action ONLY after: output the complete plan (per Hard Rule 1 below) → offer 模式 A / 模式 B → the user **explicitly types** `CONFIRM` for that exact plan. Never execute inside the same message that shows the plan. Never self-confirm.
+2. **Holding tools ≠ permission.** Having `Bash`, or knowing the engine credentials in `references/08/09/10` / `engines.mjs`, does NOT authorize a write. The tools exist for read-only analysis and for the post-CONFIRM execution step only.
+3. **Read-only is free.** Analysis, backtesting, Hyperopt, status/balance queries, data downloads, `scan/coin/ta/prob/solve/pyramid/position/engines` need no confirmation — they change nothing.
+4. **Engine risk ≠ user approval.** "The engine has stop-loss / dry-run / paper-trade protections" is never a reason to skip the user gate. Dry-run/paper still requires the same plan + CONFIRM before deploy/force.
+5. **Every agent and subagent obeys this** (orchestrator, retrospective-writer, any future agent). If an agent lacks authority to confirm, it routes the plan back to the main session for the user.
+
 ## Three-Tool Orchestration (top-level routing)
 
 This skill's core job is to **route each request to exactly one of three tools**, efficiently:

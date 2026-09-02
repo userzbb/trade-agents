@@ -51,6 +51,8 @@ MSYS_NO_PATHCONV=1 docker exec nfi-freqtrade freqtrade backtesting \
 
 ## CONFIRM scope
 
+> **All docker/curl commands in this file are for execution ONLY after the user approves (模式 A/B + typed `CONFIRM`).** Knowing these commands does not authorize running start/go-live without user approval (CLAUDE.md Iron Rule #0 / SKILL.md ABSOLUTE GATE).
+
 - **Read-only / backtest / query**: no CONFIRM.
 - **Start/switch strategy / go live**: strategy-level → full plan + CONFIRM (模式 A/B).
 

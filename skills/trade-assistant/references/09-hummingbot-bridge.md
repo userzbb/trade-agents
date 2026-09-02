@@ -67,6 +67,8 @@ Grid: `grid_executor` (`start_price`/`end_price`/`total_amount_quote`/levels) �
 
 ## CONFIRM scope
 
+> **All MCP/REST write calls in this file are for execution ONLY after the user approves (模式 A/B + typed `CONFIRM`).** Knowing these tools/credentials does not authorize running write operations without user approval (CLAUDE.md Iron Rule #0 / SKILL.md ABSOLUTE GATE).
+
 - **Strategy-level ops need CONFIRM**: deploy/start/stop a bot, adjust controller params, force an order.
 - **Read-only, no CONFIRM**: status, portfolio, market data, executors, history.
 - Intra-bot order management (grid fills, MM quotes, triple-barrier stop/TP) is handled by Hummingbot's engine.

@@ -6,6 +6,7 @@
 
 ## 0. Iron Rules (violating any one = stop trading for the day)
 
+0. **Confirmation gate (highest).** No fund operation (order/close/cancel/leverage/transfer) and no engine/strategy state change (start/stop bot, deploy strategy, forceenter/forcebuy, dry-run→live) is executed until a complete plan is shown and the user explicitly approves (模式 A/B + typed `CONFIRM`). No auto-execution; read-only analysis/backtest is free. This is the same gate as SKILL.md ABSOLUTE GATE / CLAUDE.md Iron Rule #0.
 1. Daily loss ≥ 8% of equity (currently ~27U) → forced stop.
 2. Per-trade loss ≤ 6% of equity (currently ~20U); stop-loss placed at the same time as entry.
 3. 3 consecutive stop-outs → flat for 24h.
