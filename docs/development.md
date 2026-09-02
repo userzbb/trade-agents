@@ -1,95 +1,108 @@
-# 开发文档
+# 开发文档（AI / 维护者）
 
-> 面向本插件的开发者/维护者：结构、如何扩展、如何测试、git 工作流。
+> 本文件 + `CLAUDE.md` 是 **AI 开发此项目的规范入口**（CLAUDE.md 进仓库自动加载，本文件给详细操作）。配套硬约定见 `docs/conventions.md`。改动代码时必须同步相关 md 文档（见文末「文档维护纪律」）——md 是项目一等公民。
 
-## 项目结构（完整树）
+## 项目结构（当前 v0.4.0）
 
 ```
 trade-agents/
 ├── .claude-plugin/
-│   ├── plugin.json          # 插件清单（name/version/description/keywords）
-│   └── marketplace.json     # 发布用 marketplace 清单（source: 完整仓库 URL）
-├── README.md                # 入口 README（链接到 docs/）
-├── CLAUDE.md                # 给 AI 看的开发文档（AI 进仓库自动加载）
-├── docs/                    # 说明文档
-│   ├── architecture.md      # 架构设计
-│   ├── skill-guide.md       # skill 层详解
+│   ├── plugin.json          # 清单（name/version；每次用户可见变更 bump version）
+│   └── marketplace.json     # marketplace 发布清单（source: 完整仓库 URL）
+├── README.md                # 入口 README（安装/部署/环境变量，链接 docs/）
+├── CLAUDE.md                # AI 进仓库自动加载：Iron Rules + Common tasks + Env facts
+├── docs/                    # 用户 + 开发者文档（md，全部需随代码维护）
+│   ├── architecture.md      # ★ 架构设计（md 真相源；不用 archify 可视化图）
+│   ├── conventions.md       # ★ 规范：命名/语言/结构/防漂移/安全/发布/架构md/Agent开发
+│   ├── development.md       # 本文件：AI/维护者开发文档
+│   ├── skill-guide.md       # skill 层详解（含脚本工具箱全表）
 │   ├── agents.md            # agents 指南
-│   ├── vector-search.md     # 向量检索指南
-│   ├── usage.md             # 使用场景速查
-│   ├── development.md       # 本文件：开发文档
-│   └── conventions.md       # 规范
-├── agents/                  # agent 定义（auto-discover）
-│   ├── retrospective-writer.md
-│   └── binance-orchestrator.md
-├── mcp/
-│   └── binance-mcp-server.mjs  # 行情/账户 MCP（confirm:true）
-└── skills/
-    └── trade-assistant/     # ★ skill 层（唯一真相源）
-        ├── SKILL.md         # 英文指令 + 双支柱 + CONFIRM
-        ├── references/      # 策略知识库（8 英文文件）
-        ├── scripts/         # 14 个零依赖脚本
-        └── evals/           # skill 测试用例
+│   ├── usage.md             # 使用场景速查（你说→触发→得到）
+│   ├── vector-search.md     # 向量检索（BM25）
+│   └── nfi-deployment.md    # NFI 引擎部署（可选）
+├── agents/*.md              # agent 定义（retrospective-writer · binance-orchestrator）
+├── hooks/block-trading-commands.mjs   # PreToolUse 安全门（拦截引擎/资金写命令）
+├── mcp/binance-mcp-server.mjs         # 行情/账户 MCP server（写工具 confirm:true）
+├── skills/trade-assistant/   # ★ skill 层（唯一真相源）
+│   ├── SKILL.md             # 英文指令 + 三工具编排 + ABSOLUTE GATE + 环境自检
+│   ├── references/          # 策略知识库 00-10（08/09/10 = Freqtrade/Hummingbot/NFI 引擎桥）
+│   ├── scripts/             # 零依赖脚本（分析 · 引擎桥 engines/optimize/backtest · profile/envcheck · vector）
+│   └── evals/evals.json     # skill 触发测试用例
+└── tests/                   # node:test 单测（tests/*.test.mjs）
 ```
+
+> 已废弃（不维护、不引用、勿重新引入）：独立分发镜像 `D:\claude-dev\skills\trade-assistant`；archify 可视化架构图（HTML/spec，2026-09-02 删除）。
 
 ## 如何扩展
 
 ### 新增/修改策略知识
-1. 编辑 `skills/trade-assistant/references/<NN>-*.md`（英文）。
-2. 修改 SKILL.md 的 references 指引表（若改了文件名/序号）。
-3. 同步镜像（见下）。
-4. 涉及用户输出模板（复盘/周报/月报正文）→ 保持中文。
+1. 编辑 `skills/trade-assistant/references/<NN>-*.md`（英文；用户输出模板保持中文）。
+2. 改文件名/序号时同步 SKILL.md 的 references 指引表。
+3. 改动是用户可见内容 → 遵守发布纪律 bump version（conventions §6）。
 
 ### 新增脚本
-1. 放到 `skills/trade-assistant/scripts/`，零依赖（只用 `node:` 内置模块 + 既有 `_lib.mjs`）。
-2. 注释用英文；面向用户的输出用中文。
-3. 在 SKILL.md 的脚本工具箱表 + docs/skill-guide.md + docs/usage.md 补一行。
-4. `node --check <file>` 过语法；跑一次真实用例验证。
+1. 放 `skills/trade-assistant/scripts/`，**零依赖**（只用 `node:` 内置 + 既有 `_lib.mjs`）。
+2. 注释英文；面向用户输出中文。
+3. 在 **SKILL.md 工具箱表 + docs/skill-guide.md + docs/usage.md** 各补一行。
+4. `node --check <file>` 过语法；跑一次真实用例；逻辑可单测的加 `tests/<name>.test.mjs`。
 
 ### 新增 agent
-1. 在 `agents/` 下建 `<kebab-name>.md`，frontmatter 含 name/description/model/color/tools。
-2. 描述里给 2–4 个触发场景 + 正文 "When to invoke" 区块。
-3. 系统提示词英文 + 顶部"所有输出中文"硬规则。
-4. 校验：`bash <plugin-dev>/.../validate-agent.sh agents/<name>.md`。
-5. 在 docs/agents.md 与 README 组件树补充。
+1. `agents/<kebab-name>.md`，frontmatter 含 name/description/model/color/tools。
+2. 描述 2–4 个触发场景 + 正文 "When to invoke"；遵守 plugin-dev:agent-development + conventions §10。
+3. 校验 `bash <plugin-dev>/skills/agent-development/scripts/validate-agent.sh agents/<name>.md`。
+4. 在 docs/agents.md 与 README 组件树补充。
 
 ### 修改 MCP server
-- 编辑 `mcp/binance-mcp-server.mjs`，`.mcp.json` 无需改（路径不变）。
-- 写工具必须保持 `confirm: true` 强制。
+- 编辑 `mcp/binance-mcp-server.mjs`；`.mcp.json` 通常无需改。
+- 写工具必须 `confirm: true`；`.mcp.json` 引用的环境变量（`HUMMINGBOT_MCP_DIR` 等）变更时同步 README「环境变量」节。
 
 ## 测试
 
 ```bash
+# 全部单测（42 个，node --test；Windows 须用 tests/*.test.mjs glob，勿传目录）
+node --test tests/*.test.mjs
+
 # JS 语法
 for f in skills/trade-assistant/scripts/*.mjs mcp/*.mjs; do node --check "$f"; done
 
-# agent 校验
-bash <plugin-dev>/skills/agent-development/scripts/validate-agent.sh agents/retrospective-writer.md
-
-# 插件清单
+# 插件清单 JSON
 node -e "JSON.parse(require('fs').readFileSync('.claude-plugin/plugin.json'))"
+
+# 环境自检（本机真实环境，只读）
+node skills/trade-assistant/scripts/envcheck.mjs
 
 # 向量检索（真实数据）
 node skills/trade-assistant/scripts/vector.mjs index
 node skills/trade-assistant/scripts/vector.mjs query "止损 插针" --top 5
 
-# 周报生成（回归）
-node skills/trade-assistant/scripts/summary.mjs weekly --date YYYY-MM-DD   # 跑完删临时文件
-
-# 镜像一致性
-diff -rq skills/trade-assistant ../skills/trade-assistant --exclude=.git --exclude=README.md --exclude=LICENSE --exclude=.gitignore
+# 周报生成（回归；跑完删临时文件）
+node skills/trade-assistant/scripts/summary.mjs weekly --date YYYY-MM-DD
 ```
 
 ## Git 工作流
 
 ```bash
-git add -A && git commit -m "<type>: <desc>"   # 例如 docs:/feat:/fix:/refactor:
+git add -A && git commit -m "<type>: <desc>"
 git push origin main
 ```
 
-建议提交前缀：`feat`（新能力）、`fix`（修复）、`docs`（文档）、`refactor`、`sync`（镜像同步）。
+提交前缀（conventions §6）：`feat` 新能力 · `fix` 修复 · `docs` 文档 · `refactor` 重构 · `release` 发布（bump version）。**任何用户可见功能改动 push 前先 bump `.claude-plugin/plugin.json` version**，否则 marketplace 用户 `plugin update` 拉不到。
 
-## 数据层（不在本仓库内）
+## 数据层（独立 git 仓库，不在本插件仓库内）
 
-- `D:\trade` 是独立 git 仓库（数据层）：`data/trade.db`、`retrospectives/`、`plans/`、`coin-classification.json`、`vector-index.json`（gitignore）。
+- `D:\trade`（`TRADE_HOME` 可覆盖）：`data/trade.db`、`retrospectives/`、`plans/`、`strategy-profile.json`、`coin-classification.json`、`vector-index.json`（gitignore）。
 - 复盘/周报/月报归档在 `D:\trade\retrospectives\`，由 agent 或 `summary.mjs` 生成并 git commit。
+
+## 文档维护纪律（每次改动必读）
+
+| 改了什么 | 必须同步的 md |
+|---|---|
+| 组件/引擎/数据层/安全机制（架构级） | `docs/architecture.md`（分层 ASCII 视图/职责矩阵/数据流） |
+| 开发约定、发布、防漂移、命名、语言 | `docs/conventions.md` |
+| AI 开发入口规范 | `CLAUDE.md` + 本文件 `docs/development.md` |
+| skill 指令/工作流/工具箱/环境自检 | `skills/trade-assistant/SKILL.md`（真相源） |
+| 新脚本/新命令 | SKILL.md 工具箱表 + `docs/skill-guide.md` + `docs/usage.md` |
+| agent 行为 | `docs/agents.md` |
+| 用户可见功能变更 | 顺手 bump `.claude-plugin/plugin.json` version（release 提交） |
+
+不允许"只改代码/只改 SKILL，其余文档留着过期"。所有 md 与代码同 commit 演进。

@@ -94,7 +94,8 @@ docs/*.md             # 用户可读，中文
 - **架构文档真相源 = `docs/architecture.md`（markdown）**：分层 ASCII 视图 + 组件职责矩阵 + 关键数据流 + 依赖模型。更新成本低、diff 可读、token 高效，日常开发直接改它。
 - 架构变更（新增/改组件、引擎、数据层、安全机制、个人画像等）时：**同步更新 `docs/architecture.md`**；涉及开发约定则更新本 `docs/conventions.md`。两者都要维护，不允许只改代码不更文档。
 - **不使用** archify / 生成 HTML 架构图；不维护架构 spec JSON。确有向外部读者展示的临时需要时，用 `docs/architecture.md` 内的 ASCII 分层图即可。
-- 所有 md 文档需随代码演进维护；文档是项目一等公民（README/docs/*.md/skill references），不是发布后一次性的说明。
+- **不主动维护/重做可视化架构图**：仅当用户**当前对话明确要求**"更新架构图"时才碰（届时用 architecture.md 的 ASCII 或一次性产物），否则绝不主动。
+- 所有 md 文档需随代码演进维护；文档是项目一等公民（README/docs/*.md/skill references），不是发布后一次性的说明。文档务必写清楚（路径/命令/边界/依据），不要含糊或留过期数字。
 
 ## 10. Agent 开发规范
 

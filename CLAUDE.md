@@ -8,7 +8,7 @@ Single installable Claude Code plugin for the Binance USDT-M perpetual futures s
 
 - Plugin root: `D:\claude-dev\agents\trade-agents`
 - **Skill (single source of truth)**: `skills/trade-assistant/`
-  - Strategy KB: `references/` — 8 English files `00-core-playbook` … `07-trade-log-and-review-template` (contains Chinese output templates)
+  - Strategy KB: `references/` — English KB `00-core-playbook` … `10-nfi-bridge` (`08/09/10` = Freqtrade/Hummingbot/NFI engine bridges; contains Chinese output templates)
   - Scripts: `scripts/` — zero-dep Node toolbox (analysis: scan/coin/ta/prob/solve/pyramid/position/sync/report/plan/summary · engines: engines/optimize/backtest · mgmt: profile/envcheck · search: vector · shared: db/_lib)
 - Agents: `agents/*.md` (`retrospective-writer`, `binance-orchestrator`)
 - MCP: `mcp/binance-mcp-server.mjs` + `.mcp.json`
@@ -43,6 +43,8 @@ Single installable Claude Code plugin for the Binance USDT-M perpetual futures s
 - Don't execute ANY (A) fund operation or (B) engine/strategy state change without CONFIRM (see Iron Rule #0).
 - Don't add npm dependencies to scripts (zero-dep only).
 - Don't edit `D:\trade\**` as part of plugin changes except via the documented scripts (reviews/weeklies are generated + git-committed there by the agents).
+- Don't rebuild/maintain the visual architecture diagram (archify HTML/spec — deleted 2026-09-02). Architecture source of truth is `docs/architecture.md` (md); update that file on architecture changes. Do NOT touch any visual/archify artifact unless the user explicitly asks to update it in this conversation.
+- Don't let md docs go stale — every change must sync the matching md (architecture/conventions/development/SKILL/guides; see `docs/development.md` "文档维护纪律"). Docs are first-class.
 
 ## Env facts (authoritative copy in `skills/trade-assistant/SKILL.md`)
 
