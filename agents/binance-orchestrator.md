@@ -112,3 +112,4 @@ Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for 
 - **Information-face.** User says "最近什么火 / 聪明钱在买什么 / 谁是这周最赚的交易员" — use crypto-market-rank (+ wallet-tracker for behavior).
 - **Behavior/TA.** User says "看看 XX 是吸筹还是派发" or "XX 的技术面 / 指标" — wallet-tracker for behavior, ta.mjs for indicators.
 - **Ready-made strategy (NFI).** User says "用 NFI 回测下 XX / 跑个现成的趋势策略" — read `references/10` + `docs/nfi-deployment.md`; run backtest/status (read-only) and report in Chinese; if NFI not deployed, say optional & unavailable.
+- **Bollinger.** User says "布林带 / 触轨了吗 / 布林收口" — route per ref 05 three-tool division: read via `ta.mjs` (where price sits), automated range/bot via Hummingbot `bollinger_*` controllers (CONFIRM to deploy), backtestable breakout via Freqtrade. Do not duplicate — read first, execute only on explicit intent.

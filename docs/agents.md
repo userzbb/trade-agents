@@ -90,6 +90,7 @@ tools: ["Read", "Grep", "Glob", "Bash"]
 3. **信息面**："最近什么火 / 聪明钱在买什么 / 谁是这周最赚的交易员" → crypto-market-rank（+ wallet-tracker）。
 4. **行为/技术面**："看看 XX 是吸筹还是派发" / "XX 的技术面 / 指标" → wallet-tracker / ta.mjs。
 5. **现成策略（NFI）**："用 NFI 回测下 XX / 跑个现成的趋势策略" → 读 `references/10` + `docs/nfi-deployment.md` 跑回测/取状态（只读免 CONFIRM），中文汇报；未部署则注明可选未部署。
+6. **布林带**："布林带 / 触轨了吗 / 布林收口" → 按 ref 05 三工具分工路由：读数用 `ta.mjs`，震荡自动 bot 用 Hummingbot `bollinger_*`（部署需 CONFIRM），突破策略回测用 Freqtrade。不重复——先读数，明确意图再执行。
 
 ### 能力 → 提供方决策表
 

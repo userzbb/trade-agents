@@ -63,3 +63,17 @@ On T3, TA is used **only to judge which act of the script the MM is currently pl
 - 1d: big-picture direction and trend stage
 
 Multi-timeframe resonance (e.g. 1h + 4h both bullish) = highest confidence; conflicting timeframes → downgrade to short-term.
+
+## Bollinger Bands — 3-tool division of labor (don't duplicate)
+
+The same Bollinger concept is served by three different tools at three different layers. Route per need:
+
+| Layer | Tool | What it does | When to use |
+|---|---|---|---|
+| **Analyze** (read) | `ta.mjs` (this toolbox) | computes `boll(20,2)` → says where price sits in the band (%B, upper/lower touch, squeeze) in Chinese | "现在价在布林带哪 / 超买超卖读数" — the **analysis read**, feeds LLM judgment |
+| **Execute-range** | Hummingbot built-in controllers `bollinger_v1` / `bollinger_v2` / `bollingrid` (via `hummingbot-mcp`) | full range/mean-reversion bot logic (buy at lower band, exit upper) | range/S6 ambush, mean-reversion **automated** runs → Hummingbot |
+| **Execute-trend (optional)** | Freqtrade strategy with Bollinger (from ecosystem) | Bollinger-based directional/breakout strategy, backtestable | a Bollinger idea worth backtesting/validating → Freqtrade |
+
+Routing rule: **read = ta.mjs; run a band-range bot = Hummingbot; validate a band-breakout strategy = Freqtrade.** `/binance` ecosystem skills provide raw klines only — they do NOT compute indicators (no duplication there).
+
+> 用户可见输出中文。布林带是第二道确认（ref 05 Position in Signal System），非进场依据本身；T3 庄家币上布林带信号可能被操纵，与 TA 一样失效（ref 00/04）。
