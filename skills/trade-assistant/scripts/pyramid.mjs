@@ -1,14 +1,17 @@
 // 金字塔加仓引擎：小仓位试探 → 确认后分批加仓 → 动态风控
 // 用法: node pyramid.mjs <SYMBOL> <side> --equity <U> [--tier T1|T2|T3]
 // 输出：分 3 批的进场计划（试探/加仓1/加仓2）、每批条件、总仓位、综合止损
-import { fapi, fmt, classify } from './_lib.mjs';
+import { fapi, fmt, classify, strategyProfile } from './_lib.mjs';
 
 const SYM = process.argv[2], SIDE = (process.argv[3] || '').toUpperCase();
 const opt = (n, d) => { const i = process.argv.indexOf('--' + n); return i > 0 ? process.argv[i + 1] : d; };
-const equity = +opt('equity', 336);
+const prof = strategyProfile();
+const equity = +opt('equity', prof.equity);
+const leverage = prof.leverage;
+const redLinePct = prof.risk.perTradeCapPct;
 const tier = opt('tier', 'auto');
 if (!SYM || (SIDE !== 'LONG' && SIDE !== 'SHORT')) {
-  console.error('用法: node pyramid.mjs <SYMBOL> <LONG|SHORT> --equity 336 [--tier T1|T2|T3]'); process.exit(1);
+  console.error('用法: node pyramid.mjs <SYMBOL> <LONG|SHORT> [--equity U] [--tier T1|T2|T3]（默认 equity/杠杆/红线取自 strategy-profile.json）'); process.exit(1);
 }
 
 const [price, t24] = await Promise.all([
@@ -22,6 +25,9 @@ const cls = tier === 'auto' ? classify(volM, amp) : { tier, modelDiscount: tier 
 
 console.log(`=== ${SYM} 金字塔加仓计划（${SIDE}）===`);
 console.log(`现价 ${fmt(cur)} | 账户 ${equity}U | 分级 ${cls.tier}（仓位系数 ×${cls.posMult}）`);
+if (prof._applied) {
+  console.log(`策略档案已应用: 权益 ${equity}U | 杠杆 ${leverage}x | 单笔红线 ${(redLinePct*100).toFixed(0)}%（strategy-profile.json）`);
+}
 
 // ---- 金字塔仓位结构（保证金占总资金比例，分批进场）----
 // 试探仓 2% → 确认仓 +6%（累计 8%）→ 趋势仓 +12%（累计 20%）
@@ -41,11 +47,11 @@ const batches = [
 ];
 
 let cumMargin = 0, cumNotional = 0, wSum = 0, totalQty = 0;
-console.log(`\n分批计划（${SIDE}，20x 逐仓）:`);
+console.log(`\n分批计划（${SIDE}，${leverage}x 逐仓）:`);
 console.log('批次        保证金   名义     累计保证金  进场条件');
 batches.forEach((b, i) => {
   const margin = equity * b.marginPct;
-  const notional = margin * 20;
+  const notional = margin * leverage;
   const qty = notional / cur;
   cumMargin += margin; cumNotional += notional; totalQty += qty;
   // 加权平均成本（近似都按现价计，实际第二批价位更优/更差）
@@ -65,8 +71,8 @@ const worstLoss = cumNotional * (SIDE === 'LONG' ? (avgEntry - overallStop) / av
 console.log(`\n风控线:`);
 console.log(`试探仓止损: ${fmt(probeStop)}（-4%，最宽，给试错空间）`);
 console.log(`加满后综合止损（移动）: ${fmt(overallStop)}（-2.5%，紧）`);
-console.log(`最大单笔风险（综合止损触发）: ${worstLoss.toFixed(1)}U = 账户 ${(worstLoss / equity * 100).toFixed(1)}% ${worstLoss / equity > 0.06 ? '⚠ 超 6% 红线，需缩批' : '✓ 在 6% 红线内'}`);
-console.log(`爆仓距离参考: 20x 下约 ${(1/20*0.9*100).toFixed(0)}% 反向（分批建仓实际更强）`);
+console.log(`最大单笔风险（综合止损触发）: ${worstLoss.toFixed(1)}U = 账户 ${(worstLoss / equity * 100).toFixed(1)}% ${worstLoss / equity > redLinePct ? `⚠ 超 ${(redLinePct*100).toFixed(0)}% 红线，需缩批` : `✓ 在 ${(redLinePct*100).toFixed(0)}% 红线内`}`);
+console.log(`爆仓距离参考: ${leverage}x 下约 ${(1/leverage*0.9*100).toFixed(0)}% 反向（分批建仓实际更强）`);
 
 // ---- 盈利目标（移动止盈）----
 const tp1 = SIDE === 'LONG' ? cur * 1.05 : cur * 0.95;
