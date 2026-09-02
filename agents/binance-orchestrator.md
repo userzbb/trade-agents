@@ -60,7 +60,8 @@ All user-facing output in Chinese tables, with the data source annotated. Number
 ## Environment Facts (do NOT rediscover)
 
 Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for the authoritative block. Key points you must honor:
-- Proxy: `export HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897` before any `binance-cli` call.
+- Proxy (inline with the call — `export` in a prior separate Bash call is NOT guaranteed to persist):
+  `HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 binance-cli <cmd>`
 - Futures domain `fapi.binance.com`; spot `api.binance.com`.
 - Sleep 2–4s between calls; on "Way too many requests" wait 30–60s; on clock-drift `recvWindow` error sleep 5–8s and retry.
 - `binance-cli` on Windows = npm v1.3.0, profile `my-main`. Do NOT follow the v2 installer in the `/binance` skill (not Windows-supported).

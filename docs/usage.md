@@ -25,7 +25,8 @@
 | 部署/启停网格或做市 bot | orchestrator → `hummingbot-mcp` | bot 生命周期 + 中文状态汇报；部署需 CONFIRM |
 | 查 Hummingbot bot 状态/盈亏 | orchestrator → `hummingbot-mcp` | bot 状态/模拟 PnL 中文表格 |
 | 看下三个引擎的状态 | skill → `engines.mjs` | 统一中文看板（Freqtrade/Hummingbot/binance 持仓+盈亏） |
-| 环境自检 / 修环境变量 / 为什么 hummingbot 连不上 | skill → `envcheck.mjs`（会话首个交易请求自动跑一次） | 环境变量状态表（当前进程 vs Windows 用户环境）；缺的必需变量 → setx 方案待你 CONFIRM |
+| 环境自检 / 修环境变量 / 为什么 hummingbot 连不上 | skill → `envcheck.mjs`（默认 env+依赖，本地；会话首个交易请求自动跑一次） | 环境变量/依赖状态表（当前进程 vs Windows 用户环境）；缺的必需变量 → setx 方案待你 CONFIRM |
+| 网络联通 / 为什么连不上 / 交易前 / 代理或引擎问题 | skill → `envcheck.mjs --net` | 本地 env+依赖 + 网络联通结果（代理→fapi + Freqtrade/Hummingbot/NFI REST）；fapi 经代理不通 → 退出码 2，先查代理 7897 是否在跑 |
 | 对候选币深查 OI/主动盘 | skill → `coin.mjs <SYM>` | 持仓量 OI + taker 买占比 + 账户LS 确认趋势 |
 
 ## 常用命令速查（scripts/ 目录下）
@@ -38,7 +39,8 @@ node prob.mjs ARBUSDT 0.113 1000 target=0.118 --stop 0.111   # 概率
 node solve.mjs ARBUSDT --entry 0.113 --qty 1000 --equity 600 # 止损止盈求解（每单必跑；equity 默认取策略档案）
 node pyramid.mjs ARBUSDT LONG --equity 600                   # 金字塔建仓（equity/杠杆/红线默认取策略档案）
 node profile.mjs set --equity 600 --per-trade-cap-pct 0.05   # 设置个人风险画像（首次采参/变更）
-node envcheck.mjs                    # 环境自检（当前进程 vs Windows 用户环境；缺的必需变量给 setx 建议）
+node envcheck.mjs                    # 环境自检（默认 env+依赖，本地：当前进程 vs Windows 用户环境；缺的必需变量给 setx 建议）
+node envcheck.mjs --net              # 追加网络联通自检（代理→fapi + 三引擎 REST）
 node position.mjs                      # 持仓速览
 node sync.mjs --days 7                 # 流水入库（每天收盘）
 node summary.mjs weekly                # 周报
