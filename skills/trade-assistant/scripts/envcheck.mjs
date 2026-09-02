@@ -142,7 +142,18 @@ export function analyzeEnv({ procEnv = {}, userEnv = null, probes = PROBES() } =
       } else if (!inProc && inUser) {
         rows.push({ level: 'info', text: `HUMMINGBOT_MCP_DIR  注册表已设但本会话没继承 → 完全重启 Claude Code 后才对本会话生效。` });
       } else if (inProc && inUser) {
-        rows.push({ level: 'ok', text: `HUMMINGBOT_MCP_DIR = ${v}（进程+注册表一致）` });
+        // Both process.env and HKCU user env hold the var — compare the two
+        // VALUES, not just presence. This is exactly the process-vs-next-launch
+        // drift this check exists to surface (stale setx, or a shell export
+        // overriding a newer registry value).
+        const norm = (x) => String(x).replace(/\\/g, '/').toLowerCase();
+        if (norm(procEnv[m.key]) !== norm(userEnv[m.key])) {
+          warnCount += 1;
+          rows.push({ level: 'warn', text: `HUMMINGBOT_MCP_DIR 进程 ${procEnv[m.key]} 与注册表 ${userEnv[m.key]} 不一致 → 本会话用进程值，重启后将以注册表值为准。建议 setx HUMMINGBOT_MCP_DIR "${userEnv[m.key]}" 固化` });
+          fixes.push(`setx HUMMINGBOT_MCP_DIR "${userEnv[m.key]}"`);
+        } else {
+          rows.push({ level: 'ok', text: `HUMMINGBOT_MCP_DIR = ${v}（进程+注册表一致）` });
+        }
       } else {
         rows.push({ level: 'ok', text: `HUMMINGBOT_MCP_DIR = ${v}（${src(m)}）` });
       }
@@ -338,12 +349,19 @@ function main() {
   let errCount = envRes.errCount;
   if (netRes && netRes.errs) errCount += netRes.errs;
 
-  // Combined summary: keep the analyzeEnv summary text (always present) and
-  // append dep/net counts when nonzero.
+  // Combined summary: decide the 通过/问题 stem on the FINAL combined error
+  // state (env errs + net errs), not env alone — a clean env whose --net probe
+  // fails (combined errCount>0, env clean) must NOT print 通过.
   const extra = [];
   if (depRes && depRes.warns) extra.push(`${depRes.warns} 个依赖警告`);
   if (netRes && (netRes.errs || netRes.warns)) extra.push(`${netRes.errs} 个网络错误/${netRes.warns} 个网络警告`);
-  const summary = extra.length ? `${envRes.summary.replace(/。$/, '')} · ${extra.join(' · ')}。` : envRes.summary;
+  const suffix = extra.length ? ` · ${extra.join(' · ')}` : '';
+  let summary;
+  if (errCount > 0 && envRes.errCount === 0) {
+    summary = `环境自检：${errCount} 个问题${suffix}。`;
+  } else {
+    summary = extra.length ? `${envRes.summary.replace(/。$/, '')}${suffix}。` : envRes.summary;
+  }
 
   for (const r of rows) console.log(`${tag[r.level]} ${r.text}`);
   console.log('');

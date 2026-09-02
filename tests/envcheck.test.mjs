@@ -52,6 +52,21 @@ test('envcheck: 进程+注册表一致 → OK（0 err）', () => {
   assert.match(all(res), /进程\+注册表一致/);
 });
 
+test('envcheck F1: 进程+注册表都设但值不一致 → warn（非 err）提示不一致 + setx 固化建议', () => {
+  const res = analyzeEnv({ procEnv: { HUMMINGBOT_MCP_DIR: 'E:/a/mcp' }, userEnv: { HUMMINGBOT_MCP_DIR: 'F:/b/mcp' }, probes: probesNoMCP });
+  assert.equal(res.errCount, 0);
+  assert.ok(res.warnCount >= 1, all(res));
+  assert.match(all(res), /不一致/);
+  assert.ok(!all(res).includes('进程+注册表一致'), all(res));
+  assert.ok(res.fixes.some((f) => f.includes('setx HUMMINGBOT_MCP_DIR "F:/b/mcp"')), all(res));
+});
+
+test('envcheck F1: 进程+注册表值仅大小写/分隔符不同 → 归一化后算一致（ok、0 warn 归因）', () => {
+  const res = analyzeEnv({ procEnv: { HUMMINGBOT_MCP_DIR: 'E:\\trade-bots\\hummingbot\\mcp' }, userEnv: { HUMMINGBOT_MCP_DIR: 'e:/trade-bots/hummingbot/mcp' }, probes: probesNoMCP });
+  assert.equal(res.errCount, 0);
+  assert.match(all(res), /进程\+注册表一致/);
+});
+
 test('envcheck: 值指向别处且探测路径存在 → warn', () => {
   const res = analyzeEnv({ procEnv: { HUMMINGBOT_MCP_DIR: 'C:\\elsewhere\\mcp' }, userEnv: { HUMMINGBOT_MCP_DIR: 'C:\\elsewhere\\mcp' }, probes });
   assert.equal(res.errCount, 0);
@@ -189,6 +204,22 @@ test('Task4 CLI: --net + fapi 不通(ENVCHECK_FAKE_NET=err) → exit 2 + 网络�
   assert.equal(code, 2);
   assert.match(out, /\[网络\]/);
   assert.match(out, /网络错误/);
+});
+
+test('Task4 CLI: --net 失败且 env 干净 → 摘要用“问题”口径、不再写“通过”（exit 仍 2）', () => {
+  let code = 0;
+  let out = '';
+  try {
+    out = execFileSync('node', [ENVCHECK, '--net'], {
+      encoding: 'utf8',
+      env: { ...process.env, HUMMINGBOT_MCP_DIR: W, ENVCHECK_FAKE_NET: 'err' },
+    });
+  } catch (e) { code = e.status; out = e.stdout || ''; }
+  assert.equal(code, 2);
+  const summaryLine = out.split('\n').find((l) => l.startsWith('环境自检'));
+  assert.ok(summaryLine, out);
+  assert.ok(!summaryLine.includes('通过'), summaryLine);
+  assert.match(summaryLine, /个问题/);
 });
 
 test('Task4 CLI: 无 --net → 不碰网络(假 net err 被忽略) → exit 0 且无 [网络] 行', () => {
