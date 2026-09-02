@@ -1,3 +1,53 @@
-*.tmp
+# Dependencies and package-manager state
 node_modules/
+.pnpm-store/
+.npm/
+.yarn/
+.yarn-cache/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
 .claude/*.local.md
+.claude/settings.local.json
+secrets/
+*.secret
+*.pem
+*.key
+
+# Runtime data created when TRADE_HOME points into this repository
+/data/
+/retrospectives/
+/plans/
+/vector-index.json
+/coin-classification.json
+
+# Logs, temporary files, and local databases
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.pid
+*.db
+*.sqlite
+*.sqlite3
+
+# Test and build output
+coverage/
+.nyc_output/
+test-results/
+dist/
+build/
+out/
+.cache/
+
+# IDE and operating-system files
+.idea/
+.vscode/*.local.json
+.DS_Store
+Thumbs.db
+Desktop.ini
+
