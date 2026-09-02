@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, delimiter as pathDelim } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -172,4 +172,67 @@ test('Task3: probeNet — 代理 ping 失败 → err', () => {
   const res = probeNet({ run: bad, ms: 500 });
   assert.ok(res.errs >= 1);
   assert.match(res.rows.map((r) => r.text).join('\n'), /代理.*不通|fapi.*不通/);
+});
+
+// Task4: main() CLI wiring. Determinism via env hooks (controller R3): the
+// brief's parent-process override cannot reach an execFileSync-spawned child,
+// so ENVCHECK_FAKE_NET (err/ok) drives probeNet when --net is passed.
+test('Task4 CLI: --net + fapi 不通(ENVCHECK_FAKE_NET=err) → exit 2 + 网络错误汇总', () => {
+  let code = 0;
+  let out = '';
+  try {
+    out = execFileSync('node', [ENVCHECK, '--net'], {
+      encoding: 'utf8',
+      env: { ...process.env, HUMMINGBOT_MCP_DIR: W, ENVCHECK_FAKE_NET: 'err' },
+    });
+  } catch (e) { code = e.status; out = e.stdout || ''; }
+  assert.equal(code, 2);
+  assert.match(out, /\[网络\]/);
+  assert.match(out, /网络错误/);
+});
+
+test('Task4 CLI: 无 --net → 不碰网络(假 net err 被忽略) → exit 0 且无 [网络] 行', () => {
+  const out = execFileSync('node', [ENVCHECK], {
+    encoding: 'utf8',
+    env: { ...process.env, HUMMINGBOT_MCP_DIR: W, ENVCHECK_FAKE_NET: 'err' },
+  });
+  assert.ok(!out.includes('[网络]'));
+  assert.match(out, /环境自检/);
+  assert.match(out, /\[依赖\]/); // deps 默认开启
+});
+
+test('Task4 CLI: --net + fapi OK(ENVCHECK_FAKE_NET=ok) → exit 0 + 网络 OK 行', () => {
+  const out = execFileSync('node', [ENVCHECK, '--net'], {
+    encoding: 'utf8',
+    env: { ...process.env, HUMMINGBOT_MCP_DIR: W, ENVCHECK_FAKE_NET: 'ok' },
+  });
+  assert.match(out, /\[网络\]/);
+  assert.match(out, /币安 fapi.*OK/);
+});
+
+test('Task4: probeDeps 真 runner 在 win32 经 shell 跑 .cmd shim（不误报未装）', () => {
+  // 控制器 carry-forward：win32 上 npm -g 只产出 binance-cli.cmd / uv.cmd
+  // shim，execFileSync 直跑无扩展名会 ENOENT → 误报“未装”。real runner 应
+  // 回退：先试 `bin`，失败且 win32 无扩展名时再用 shell 跑 `bin.cmd`。
+  // 这里把 PATH 限制到本地假 bin 目录 + System32，确定性地模拟该场景。
+  if (process.platform !== 'win32') return; // .cmd shim 问题仅 Windows 有
+  const fakeDir = mkdtempSync(join(tmpdir(), 'envcheck-cmd-'));
+  const oldPath = process.env.PATH;
+  try {
+    writeFileSync(join(fakeDir, 'binance-cli.cmd'), '@echo off\r\necho v1.3.0\r\n');
+    writeFileSync(join(fakeDir, 'uv.cmd'), '@echo off\r\necho uv 0.5.0\r\n');
+    writeFileSync(join(fakeDir, 'docker.cmd'), '@echo off\r\necho 28.0.0\r\n');
+    const sys32 = process.env.windir ? `${process.env.windir}\\System32` : 'C:\\Windows\\System32';
+    process.env.PATH = fakeDir + pathDelim + sys32; // 真实 binance-cli/uv/docker 不可达
+    const res = probeDeps({ nodeMajor: 26, platform: 'win32' });
+    const txt = res.rows.map((r) => r.text).join('\n');
+    assert.match(txt, /binance-cli v1\.3\.0/, txt); // 经 .cmd shim 命中，不是“未装”
+    assert.match(txt, /uv 0\.5\.0/, txt);
+    assert.match(txt, /Docker Desktop 28\.0\.0/, txt);
+    assert.ok(!/binance-cli 未装/.test(txt), txt);
+    assert.ok(!/uv 未装/.test(txt), txt);
+  } finally {
+    process.env.PATH = oldPath;
+    rmSync(fakeDir, { recursive: true, force: true });
+  }
 });

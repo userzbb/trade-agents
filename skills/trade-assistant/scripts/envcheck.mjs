@@ -204,24 +204,45 @@ export function probeDeps({ run, nodeMajor = Number(process.versions.node?.split
   const rows = [];
   let warns = 0;
   const real = (cmd, args, o = {}) => {
-    try { return { ok: true, out: execFileSync(cmd, args, { encoding: 'utf8', timeout: 5000, windowsHide: true, ...o }).trim() }; }
-    catch (e) { return { ok: false, out: (e.stdout || '').toString().trim() || e.message, code: e.status }; }
+    const attempt = (c, shell) => {
+      try {
+        const opts = { encoding: 'utf8', timeout: 5000, windowsHide: true, ...o };
+        // win32 `.cmd` shims must run through cmd.exe (shell), not CreateProcess.
+        // Pass the whole command line (no args array) to avoid Node DEP0190.
+        const out = shell
+          ? execFileSync(`${c} ${args.join(' ')}`, { ...opts, shell: true }).trim()
+          : execFileSync(c, args, opts).trim();
+        return { ok: true, out };
+      } catch (e) {
+        return { ok: false, out: (e.stdout || '').toString().trim() || e.message, code: e.status, errno: e.errno || e.code };
+      }
+    };
+    let r = attempt(cmd, false);
+    // npm -g / pip on Windows ship `foo.cmd` shims (binance-cli.cmd, uv.cmd);
+    // execFileSync can't spawn an extensionless `foo` or a bare `.cmd`
+    // (ENOENT/EINVAL via CreateProcess), which would false-report "未装". Retry
+    // the `.cmd` through the shell so cmd.exe resolves it via PATHEXT.
+    if (!r.ok && platform === 'win32' && !/\.[A-Za-z0-9]+$/.test(cmd)) r = attempt(`${cmd}.cmd`, true);
+    return r;
   };
   const R = run || real;
+  // Trim a leading tool-name word from CLI version output (`uv 0.5.0`) so the
+  // row label doesn't render "uv uv 0.5.0".
+  const ver = (out, tool) => String(out || '').trim().replace(new RegExp(`^${tool}\\s+`, 'i'), '');
   // Node version (hard floor: scripts use node:sqlite)
   if (nodeMajor < 26) { rows.push({ level: 'warn', text: `Node ${nodeMajor}（需 ≥26，node:sqlite）→ 请升级 Node。` }); warns += 1; }
   else rows.push({ level: 'ok', text: `Node ${nodeMajor}（≥26 ✓）` });
   // binance-cli (npm v1.3.0 Windows)
   const cli = R('binance-cli', ['--version'], {});
-  if (cli.ok) rows.push({ level: 'ok', text: `binance-cli ${cli.out}` });
+  if (cli.ok) rows.push({ level: 'ok', text: `binance-cli ${ver(cli.out, 'binance-cli')}` });
   else { rows.push({ level: 'warn', text: `binance-cli 未装/未找到 → 手动数据/执行不可用（npm i -g @binance/binance-cli）。` }); warns += 1; }
   // uv (Hummingbot MCP runtime)
   const uv = R('uv', ['--version'], {});
-  if (uv.ok) rows.push({ level: 'info', text: `uv ${uv.out}（hummingbot-mcp）` });
+  if (uv.ok) rows.push({ level: 'info', text: `uv ${ver(uv.out, 'uv')}（hummingbot-mcp）` });
   else { rows.push({ level: 'warn', text: `uv 未装 → hummingbot-mcp 不可用（若不用 Hummingbot 可忽略）。` }); warns += 1; }
   // docker (engine runtime)
   const dc = R('docker', ['version', '--format', '{{.Server.Version}}'], {});
-  if (dc.ok) rows.push({ level: 'info', text: `Docker Desktop ${dc.out}（引擎容器）` });
+  if (dc.ok) rows.push({ level: 'info', text: `Docker Desktop ${ver(dc.out, 'docker')}（引擎容器）` });
   else { rows.push({ level: 'warn', text: `docker 不可达 → Freqtrade/Hummingbot/NFI 引擎容器起不来（若不用引擎可忽略）。` }); warns += 1; }
   // /binance skill (strong dependency, user-level)
   if (platform === 'win32') {
@@ -273,20 +294,67 @@ export function probeNet({ run, proxy = 'http://127.0.0.1:7897', ms = 6000, plat
   return { rows, errs, warns };
 }
 
+// Env-driven net seam for deterministic CLI tests (repo convention: env hooks
+// like MOCK_FAPI — a parent-process function override can't reach an
+// execFileSync-spawned child). Only consulted when --net is passed.
+function fakeNetRes(how) {
+  const proxy = process.env.BINANCE_PROXY || 'http://127.0.0.1:7897';
+  if (how === 'err') {
+    return {
+      rows: [{ level: 'err', text: `币安 fapi 经代理 ${proxy} 不通（ENVCHECK_FAKE_NET=err 模拟）→ 行情/交易不可用。` }],
+      errs: 1,
+      warns: 0,
+    };
+  }
+  return {
+    rows: [{ level: 'ok', text: `币安 fapi（经代理 ${proxy}）OK（ENVCHECK_FAKE_NET=ok 模拟）` }],
+    errs: 0,
+    warns: 0,
+  };
+}
+
 function main() {
+  const args = process.argv.slice(2);
+  const wantNet = args.includes('--net');
+  const wantDeps = !args.includes('--no-deps');
   const userEnv = userEnvReader();
-  const res = analyzeEnv({ procEnv: process.env, userEnv, probes: PROBES() });
+  const envRes = analyzeEnv({ procEnv: process.env, userEnv, probes: PROBES() });
   const tag = { ok: '[OK]', info: '[·]', warn: '[!]', err: '[✗]' };
-  for (const r of res.rows) console.log(`${tag[r.level]} ${r.text}`);
+
+  const rows = [...envRes.rows];
+  let depRes = null;
+  if (wantDeps) {
+    depRes = probeDeps({});
+    rows.push(...depRes.rows.map((r) => ({ ...r, text: `[依赖] ${r.text}` })));
+  }
+
+  let netRes = null;
+  if (wantNet) {
+    const fake = process.env.ENVCHECK_FAKE_NET;
+    netRes = fake === 'err' || fake === 'ok' ? fakeNetRes(fake) : probeNet({});
+    rows.push(...netRes.rows.map((r) => ({ ...r, text: `[网络] ${r.text}` })));
+  }
+
+  let errCount = envRes.errCount;
+  if (netRes && netRes.errs) errCount += netRes.errs;
+
+  // Combined summary: keep the analyzeEnv summary text (always present) and
+  // append dep/net counts when nonzero.
+  const extra = [];
+  if (depRes && depRes.warns) extra.push(`${depRes.warns} 个依赖警告`);
+  if (netRes && (netRes.errs || netRes.warns)) extra.push(`${netRes.errs} 个网络错误/${netRes.warns} 个网络警告`);
+  const summary = extra.length ? `${envRes.summary.replace(/。$/, '')} · ${extra.join(' · ')}。` : envRes.summary;
+
+  for (const r of rows) console.log(`${tag[r.level]} ${r.text}`);
   console.log('');
-  console.log(res.summary);
-  if (res.fixes.length) {
+  console.log(summary);
+  if (envRes.fixes.length) {
     console.log('修复（需你 CONFIRM 后 agent 才执行 setx；改后完全重启 Claude Code 生效）:');
-    for (const f of res.fixes) console.log(`  ${f}`);
+    for (const f of envRes.fixes) console.log(`  ${f}`);
   } else if (userEnv === null && process.platform === 'win32') {
     console.log('注：读不到 Windows 用户环境(注册表)，只能看当前进程 env；固化请用 setx。');
   }
-  process.exit(res.errCount ? 2 : 0);
+  process.exit(errCount ? 2 : 0);
 }
 
 if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split(/[\\/]/).pop())) main();
