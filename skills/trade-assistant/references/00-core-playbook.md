@@ -49,6 +49,17 @@ This playbook is the **brain**; execution routes to one of three tools. This fra
 
 Signal mapping (ref 01): trend/momentum signals (S1/S2/S4) → Freqtrade strategy candidates; range/fade (S3/S6) + MM conditions → Hummingbot grid/MM; pure discretionary reads → manual.
 
+### Route-selection adjudication (how the agent picks the recommended route)
+
+Ask in order — each narrows the choice:
+
+1. **Market regime** → engine family. 趋势/动量（S1/S2/S4, BOS/break/continuation）→ **Freqtrade / NFI**；震荡/区间/S6 均值回归 → **Hummingbot**；无法归类、低信心、小额 → **手动 /binance**.
+2. **Backtestable?** → 方向性且可回测 → 默认先 Freqtrade `backtesting`（L2 验证视角）过了才路由；range → Hummingbot 结构读。一败回测 = 不做，换路由或放弃。
+3. **Intent / size / who watches?** → 需人盯/小仓/判断不透明 → **手动**；已验证、可无人值守 → 对应引擎.
+4. **NFI priority**: 现成趋势策略适用时（全市场趋势判断），把 NFI 作为 Freqtrade 的**自选交叉验证源**列出（可选，部署了才列）.
+
+**The user owns the route choice** — the agent only *recommends* one route with its reasoning (from the matrix in SKILL.md Core Workflow A). The plan must show the full route menu (手动 /binance · Freqtrade · Hummingbot · NFI-if-deployed) with the recommendation marked, then let the **user pick the route**; only after the user picks does 模式 A/B + CONFIRM gate execution on that chosen route.
+
 Rules:
 - **Validate before you run (default, not optional)**: any directional idea that can be backtested → Freqtrade `backtesting` first; range/S6 → Hummingbot structure read. Engines are **validation views**, not only execution (see ref 05 Independent-view cross-validation). A losing backtest is a valid reason NOT to trade it.
 - **Execution-routing menu is part of the plan**: the final plan must offer which route this judgment fits — 手动 /binance (discretionary, watch it) · Freqtrade (directional, backtestable) · Hummingbot (range/MM) · NFI (ready-made trend, optional). Recommend one; the user picks the route, then 模式 A/B + CONFIRM gates execution on that route.
