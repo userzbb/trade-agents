@@ -125,7 +125,7 @@ Hard rules:
 
 ## Hard Rules (from `references/00-core-playbook.md`, highest priority)
 
-1. **CONFIRM protocol (top priority)**: any order/close/cancel/leverage/transfer → first output the **complete trade plan** for user review. One-shot plan, no stepwise probing. Plan must include: all orders (entry + stop + TP) with full params (symbol/side/type/price/qty/reduce-only); execution order, margin, max loss, expected gain; **risk note** (max loss, liq distance, wick/slippage, the signal's historical failure mode); **win-rate estimate** (`prob.mjs` Monte-Carlo + economics logic + game-theory judgment S1-S6/script stage/crowding cross-validated — if they conflict, state so, take conservative); then offer **模式 A (manual — output plan only, no execution)** or **模式 B (auto — user types `CONFIRM`, execute the approved order only)**. Read-only queries (balance/positions/market/prob) need no confirmation.
+1. **CONFIRM protocol (top priority)**: any order/close/cancel/leverage/transfer → first output the **complete trade plan** for user review. One-shot plan, no stepwise probing. Plan must include: all orders (entry + stop + TP) with full params (symbol/side/type/price/qty/reduce-only); execution order, margin, max loss, expected gain; **risk note** (max loss, liq distance, wick/slippage, the signal's historical failure mode); **multi-view consistency matrix** (≥3 independent views from Core Workflow A step 3 — L1 toolbox / L2 engine read-only / L3 info-博弈 / L4 risk / L5 MM-only — which agree, which conflict, and the conservative adjudication taken; a single-model verdict with no matrix is incomplete); **win-rate estimate** (`prob.mjs` Monte-Carlo + economics logic + game-theory judgment S1-S6/script stage/crowding cross-validated — if they conflict, state so, take conservative); **execution-routing menu** (offer the routes this judgment fits, per ref 00 decision framework: 手动 /binance · Freqtrade（方向可回测）· Hummingbot（震荡/区间）· NFI（现成趋势，可选）— recommend one, user picks); then offer **模式 A (manual — output plan only, no execution)** or **模式 B (auto — user types `CONFIRM`, execute the approved order only)**. Read-only queries (balance/positions/market/prob) need no confirmation.
 2. Per-trade loss ≤ 6% of equity; stop placed **at the same time** as entry (STOP_MARKET reduce-only).
 3. No new positions 01:00–07:00 (queries/analysis OK).
 4. One side only; averaging down on float loss is forbidden.
@@ -137,7 +137,14 @@ Hard rules:
 ### A. Analysis (feeds all three tools)
 1. **Daily re-rank** (`scan.mjs` → filter per ref 01 → `coin.mjs` per candidate, sleep 3s between → output tone + ≤3 long + ≤3 short with S1–S6 labels).
 2. **Status check** ("现在呢"): `position.mjs` → per-position `coin.mjs` structure + key levels → output table + liq-distance + structure read; prompt at the 8% daily circuit-breaker.
-3. **Probability consult**: `prob.mjs` with REAL position params; always note "model valid on ARB-type mainstream, fails on MM coins"; combine with ref 04 script-stage read — don't just give numbers.
+3. **Multi-view cross-validation (mandatory for any directional/position decision)** — do NOT rest a conclusion on one model. Gather **≥3 independent views** and output a **consistency matrix**:
+   - **L1 toolbox** — `ta.mjs` structure/TA read (technical side).
+   - **L2 engine read-only validation** — if the idea can be backtested: Freqtrade `backtesting` on that pair (read-only, no CONFIRM); for range/S6: Hummingbot grid/controller structure read. Report what a proven engine strategy would say.
+   - **L3 info/博弈** — funding, top-trader LS, orderbook walls, wallet/smart-money behavior (binance ecosystem skills).
+   - **L4 risk/solver** — `prob.mjs` / `solve.mjs` with REAL params; **always label when the coin is T3/MM and the model is invalid** (ref 00/04) — never present a model's precise % as conclusion on a coin where the model self-declares failure.
+   - **L5 (MM coins only)** — ref 04 game-theory script-stage read + Hummingbot range structure.
+   **Adjudication**: ≥2 views pointing the same way AND no opposing strong view → proceed with that bias; conflict → take the conservative side or flat. Output the matrix in Chinese (which views agree/disagree), never a single-model verdict.
+4. **Probability consult**: `prob.mjs` with REAL position params; always note "model valid on ARB-type mainstream, fails on MM coins"; combine with ref 04 script-stage read — don't just give numbers.
 
 ### B. Route to a tool (decision framework per `references/00`)
 After analysis, decide which tool executes:

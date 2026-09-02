@@ -50,7 +50,8 @@ This playbook is the **brain**; execution routes to one of three tools. This fra
 Signal mapping (ref 01): trend/momentum signals (S1/S2/S4) → Freqtrade strategy candidates; range/fade (S3/S6) + MM conditions → Hummingbot grid/MM; pure discretionary reads → manual.
 
 Rules:
-- **Validate before you run**: any directional strategy that can be backtested → Freqtrade backtesting/Hyperopt first; a losing backtest is a valid reason NOT to trade it.
+- **Validate before you run (default, not optional)**: any directional idea that can be backtested → Freqtrade `backtesting` first; range/S6 → Hummingbot structure read. Engines are **validation views**, not only execution (see ref 05 Independent-view cross-validation). A losing backtest is a valid reason NOT to trade it.
+- **Execution-routing menu is part of the plan**: the final plan must offer which route this judgment fits — 手动 /binance (discretionary, watch it) · Freqtrade (directional, backtestable) · Hummingbot (range/MM) · NFI (ready-made trend, optional). Recommend one; the user picks the route, then 模式 A/B + CONFIRM gates execution on that route.
 - **Unattended ≠ unsupervised**: engine bots run under engine risk controls, but the playbook's 6% red line and tier sizing still bound the deployed stake.
 - **CONFIRM at the strategy level**: deploying/starting an engine bot or forcing an entry needs the same plan + CONFIRM as a manual order.
 - **Account isolation**: Freqtrade / Hummingbot / binance-cli each on a separate Binance sub-account — never share keys.

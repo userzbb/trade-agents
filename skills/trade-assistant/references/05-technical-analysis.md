@@ -41,6 +41,11 @@ Gate 3: solver (sets parameters) — solve.mjs
 CONFIRM protocol
 ```
 
+> **Independent-view cross-validation (mandatory, not optional)**: the three gates above are all **inside the toolbox** — they are not independent of each other. Do NOT rest a directional/position conclusion on them alone. Add **independent views** from outside the toolbox:
+> - **L2 engine read-only**: if the idea can be backtested, run Freqtrade `backtesting` on that pair (read-only) — what would a proven directional engine strategy say? For range/S6, read Hummingbot grid/controller structure. Engines are **validation views**, not only execution.
+> - **L3 info/博弈**: funding, top-trader LS, wallet/smart-money (binance ecosystem) — a genuinely independent data source.
+> Adjudication: ≥2 independent views same direction AND no opposing strong view → proceed; conflict → conservative/flat. See SKILL.md Core Workflow A step 3 for the L1–L5 layer list and consistency-matrix output.
+
 **Correct usage examples:**
 - S1 negative-funding+momentum (long) AND ta.mjs shows RSI recovering from oversold + MACD golden cross + EMA bullish stack → triple resonance, high-confidence long.
 - S2 pullback signal BUT ta.mjs shows top divergence + MACD death cross + price below EMA50 → **lower confidence or abandon** (capital side and technical side conflict → conservative).

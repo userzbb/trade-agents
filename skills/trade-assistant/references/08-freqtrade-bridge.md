@@ -5,7 +5,7 @@
 
 ## Role
 
-- **Strategy lab**: validate S1-S6 signal ideas + `solve.mjs` stop/TP parameters on historical data before risking money.
+- **Strategy lab / default L2 validation view**: validate S1-S6 signal ideas + `solve.mjs` stop/TP parameters on historical data before risking money. In Core Workflow A, a directional idea that can be backtested **defaults** to a Freqtrade `backtesting` run as an independent view (read-only, no CONFIRM) — it is a **validation view**, not only an execution tool.
 - **Directional execution**: dry-run first (simulated), then optionally live on a dedicated Binance sub-account.
 - NOT a market-intelligence tool — funding rates, LS ratios, order-book walls, tier classification, and Chinese reporting stay in the analysis stack (`scan/coin/prob/solve/ta`).
 
