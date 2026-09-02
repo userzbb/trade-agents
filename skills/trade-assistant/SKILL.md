@@ -7,6 +7,8 @@ description: 币安 U 本位永续合约交易助手（D:\trade 项目），强�
 
 **Strategy knowledge base lives in `references/`** (relative to this file: `references/00-core-playbook.md` … `10-nfi-bridge.md`) — the single source of truth. `binance-cli` / fapi API is the execution tool. Your job: analyze per the docs, execute per the protocol, generate documents per the lifecycle.
 
+**Strategy-parameter model.** `references/` is the canonical ruleset AND holds the *reference defaults* for the core risk image (equity 336U, 20x isolated, normal position 25%, per-trade red line 6%, daily stop 8%). Those numeric defaults are **overridden per-user** by `D:\trade\strategy-profile.json` (`${DATA_ROOT}`) when present — the user sets it in a first-time dialogue (agent asks), uses it by default, and changes it later via agent-offered options. **Safety protocols — CONFIRM gate, account isolation, no-hedge, no-averaging-down, 3-loss cooldown, no new positions 01:00–07:00, the 8% daily forced stop, and the 25%/40% drawdown circuit-breakers — are HARD and never profile-driven.**
+
 > **Language rule: all user-facing output — conversation tables, 复盘/周报/月报/计划 document bodies, summaries, error messages — MUST be in Chinese.** This file, references, and scripts are in English for the LLM's efficiency.
 
 ## ABSOLUTE GATE — NO (A) fund / (B) engine action without user CONFIRM
@@ -22,6 +24,28 @@ Rules:
 3. **Read-only is free.** Analysis, backtesting, Hyperopt, status/balance queries, data downloads, `scan/coin/ta/prob/solve/pyramid/position/engines` need no confirmation — they change nothing.
 4. **Engine risk ≠ user approval.** "The engine has stop-loss / dry-run / paper-trade protections" is never a reason to skip the user gate. Dry-run/paper still requires the same plan + CONFIRM before deploy/force.
 5. **Every agent and subagent obeys this** (orchestrator, retrospective-writer, any future agent). If an agent lacks authority to confirm, it routes the plan back to the main session for the user.
+
+## Strategy Profile (per-user risk image)
+
+The core risk image is **yours, not a fixed rule**: it lives in `D:\trade\strategy-profile.json` (agent-managed via `node scripts/profile.mjs view|set`). `solve.mjs` and `pyramid.mjs` read it for defaults (CLI arg > profile > reference default); absent → reference defaults in `references/`.
+
+| Field | Key | Consumed by |
+|---|---|---|
+| 账户净值 U | `equity` | solve / pyramid |
+| 杠杆 x（逐仓） | `leverage` | solve / pyramid |
+| 主引擎常态单笔仓位 % | `positionStyle.mainNormalPct` | solve (posfrac default) |
+| 主/彩票资金分配 % | `positionStyle.mainPct` / `lotteryPct` | advisory |
+| 彩票单笔上限 % | `positionStyle.lotteryPerTradePct` | advisory |
+| 单笔最大亏损红线 % | `risk.perTradeCapPct` | solve / pyramid |
+| 单日熔断 %（**只可收紧，硬上限 8%**） | `risk.dailyCircuitBreakerPct` | advisory (clamped ≤8%) |
+
+**First-time setup (agent-triggered).** When about to run a sizing/planning step (Core Workflow A step 4 `solve.mjs`, pyramid, or any trade plan) AND `strategyProfile()._applied` is false → **first ask the short Chinese question set** (each with an offered default), then save via `node scripts/profile.mjs set …`, then re-run the sizing script. Do NOT block pure read-only market queries on a missing profile. Question set: 账户净值 `336U` · 杠杆 `20x` · 主引擎常态单笔仓位 `25%` · 主/彩票分配 `80/20` · 单笔最大亏损红线 `6%` · 单日熔断 `8%（只能收紧）`.
+
+**Change-time flow.** User asks to change risk style ("仓位小一点 / 更激进 / 到 600 改净值") → run `view` to show current, offer 2–3 concrete option sets (conservative / current / aggressive) each showing effect on 单笔 U 上限 and liq distance → user picks → `node scripts/profile.mjs set …`. The change must reflect an explicit user choice in that turn. Not an (A)/(B) action → no typed CONFIRM, but never auto-change without the user selecting an option.
+
+**Output reflection.** When a profile is applied, `solve.mjs`/`pyramid.mjs` print `策略档案已应用: …`. If the effective per-trade cap differs from the 6% reference default, the generated plan must call it out.
+
+**Non-goal.** The profile carries ONLY the core risk image above. Tier thresholds, selection thresholds, wick buffer, pyramid batches, and signal parameters stay in `references/` as reference defaults.
 
 ## Three-Tool Orchestration (top-level routing)
 
@@ -66,6 +90,7 @@ Routing rule of thumb: **analysis/manual** → /binance+cli; **validate a direct
 4. **Clock drift**: local clock ~2s slower than Binance → signed calls intermittently fail "Timestamp outside recvWindow". Mitigation: sleep 5–8s and retry (usually works in 2–4 tries); also ask the user to sync Windows time.
 5. **binance-cli**: Windows only has npm v1.3.0 (official installer script is NOT Windows-supported); profile `my-main` (prod). Occasional "Request failed after 3 retries" = proxy jitter, retry.
 6. **Temp files**: analysis JSON → `%USERPROFILE%` (C:\tmp is unwritable in node); delete after use.
+7. **Strategy profile**: `strategy-profile.json` in `D:\trade\` holds the per-user risk image (equity/leverage/position style/risk tolerance). `solve.mjs` & `pyramid.mjs` read it for defaults; absent → reference defaults. Managed via `node <skill-root>/skills/trade-assistant/scripts/profile.mjs view|set`. The hard 8% daily stop and 25%/40% drawdown circuit-breakers can NOT be loosened via profile.
 
 ## /binance Ecosystem Dependency (strong dependency)
 
@@ -96,6 +121,7 @@ This skill **strongly depends on the external `/binance` skill** (user-level, `n
 | `prob.mjs <SYM> <entry> <qty> <targetU\|target=price> [--stop] [--liq]` | Monte-Carlo probability of hitting target/stop/liq at 14h/24h/48h | "胜率/概率/多久到 X" |
 | `solve.mjs <SYM> [--entry] [--qty] [--equity] [--posfrac]` | **stop/TP solver** — EV-optimal grid + first-touch Monte-Carlo + tier discounts + wick buffer; >6% red line → shrink suggestion | **every trade plan (mandatory)** |
 | `pyramid.mjs <SYM> <LONG\|SHORT> --equity <U>` | pyramid builder: probe 2% → add 6% → trend 12%, each batch's triggers + composite stop | new position (default build method) |
+| `profile.mjs view\|set\|clear` | per-user risk image view/edit (strategy-profile.json) | first-time setup; risk-style change |
 | `position.mjs` | positions + open orders + P&L (incl. liq distance) | "现在呢/看持仓"; session start |
 | `sync.mjs --days N` | pull exchange flows into SQLite (truth source) | **daily close; before any report/review** |
 | `report.mjs [--days 30]` | P&L analysis: by coin/tier/big-loss/DD | "这周/这月表现"; review data source |

@@ -34,8 +34,9 @@ node scan.mjs                          # 全市场扫描
 node coin.mjs ARBUSDT                  # 单币体检
 node ta.mjs ARBUSDT --interval 1h      # 技术分析
 node prob.mjs ARBUSDT 0.113 1000 target=0.118 --stop 0.111   # 概率
-node solve.mjs ARBUSDT --entry 0.113 --qty 1000 --equity 600 # 止损止盈求解（每单必跑）
-node pyramid.mjs ARBUSDT LONG --equity 600                   # 金字塔建仓
+node solve.mjs ARBUSDT --entry 0.113 --qty 1000 --equity 600 # 止损止盈求解（每单必跑；equity 默认取策略档案）
+node pyramid.mjs ARBUSDT LONG --equity 600                   # 金字塔建仓（equity/杠杆/红线默认取策略档案）
+node profile.mjs set --equity 600 --per-trade-cap-pct 0.05   # 设置个人风险画像（首次采参/变更）
 node position.mjs                      # 持仓速览
 node sync.mjs --days 7                 # 流水入库（每天收盘）
 node summary.mjs weekly                # 周报

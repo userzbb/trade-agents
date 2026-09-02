@@ -4,11 +4,13 @@
 > Created 2026-09-01 | Start capital 336U | Target 1: 600U → withdraw 300U.
 > Core philosophy: survive first — profit is the byproduct of survival.
 
+> **Reference defaults, not fixed rules.** The numeric risk image below (start equity 336U, leverage 20x, position %, red-line cap) is the **reference default**; the **per-user effective values come from `D:\trade\strategy-profile.json`** (`equity`/`leverage`/`positionStyle`/`risk`), set by the user in a dialogue. Structural/behavioral rules — Iron Rules, entry templates, no-hedge, daily routine — are fixed. See SKILL.md "Strategy Profile".
+
 ## 0. Iron Rules (violating any one = stop trading for the day)
 
 0. **Confirmation gate (highest).** No fund operation (order/close/cancel/leverage/transfer) and no engine/strategy state change (start/stop bot, deploy strategy, forceenter/forcebuy, dry-run→live) is executed until a complete plan is shown and the user explicitly approves (模式 A/B + typed `CONFIRM`). No auto-execution; read-only analysis/backtest is free. This is the same gate as SKILL.md ABSOLUTE GATE / CLAUDE.md Iron Rule #0.
-1. Daily loss ≥ 8% of equity (currently ~27U) → forced stop.
-2. Per-trade loss ≤ 6% of equity (currently ~20U); stop-loss placed at the same time as entry.
+1. Daily loss ≥ 8% of equity (currently ~27U) → forced stop. **HARD — the profile's `dailyCircuitBreakerPct` can only tighten this (≤8%), never loosen it.**
+2. Per-trade loss ≤ 6% of equity (currently ~20U); stop-loss placed at the same time as entry. The **≤6% numeric is the reference default**; effective cap = profile `risk.perTradeCapPct` (~20U = 6% of the 336U reference equity). Stop-at-entry discipline is fixed regardless of the cap.
 3. 3 consecutive stop-outs → flat for 24h.
 4. No new positions 01:00–07:00 (thinnest liquidity, most wicks).
 5. One side only — never hedge long+short at 20x.
@@ -29,6 +31,8 @@ Total equity
        Per-trade ≤ 5% of equity; NO price stop — use TIME stop (12h no-up → exit)
        Take 2–5x then leave; never convert to main position
 ```
+
+> **Reference defaults in the diagram above**: 80/20 split → profile `positionStyle.mainPct/lotteryPct`; 20x ISOLATED → profile `leverage`; normal 25% / after-wins 30% / after-loss 15% is the *state ladder behavior* (fixed shape), with normal 25% → profile `positionStyle.mainNormalPct`; lottery per-trade ≤5% → profile `positionStyle.lotteryPerTradePct`. All are reference defaults overridable via `strategy-profile.json`.
 
 ## 2. Daily Routine
 

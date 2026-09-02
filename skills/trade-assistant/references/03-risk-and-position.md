@@ -13,8 +13,10 @@
    - T2 (medium; volume 50–200M OR amplitude 25–40%): model ×0.85, position ×0.6
    - T3 (high vol/low liquidity; volume <50M OR amplitude >40%): model ×0.65, position ×0.4
 3. **Wick buffer**: minimum stop distance = 24h amplitude × 8% (automatically larger on MM coins).
-4. **6% red line**: if the solver's per-trade max loss > 6% of equity → must adopt its shrink quantity.
+4. **Per-trade red line** (reference default 6% of equity; **effective cap = profile `risk.perTradeCapPct`**): if the solver's per-trade max loss > the cap → must adopt its shrink quantity. A cap above 6% must be flagged in the plan.
 5. **Honesty clause**: on MM coins, "win rate" is only cross-validation reference — final call uses the game-theory script in ref 04. If model and game theory conflict, take the conservative value and tell the user.
+
+> **Profile source**: `solve.mjs` and `pyramid.mjs` read `equity` / `leverage` / `positionStyle.mainNormalPct` / `risk.perTradeCapPct` from `D:\trade\strategy-profile.json` (reference defaults here when absent). Per-user risk image is set via SKILL.md "Strategy Profile" flow.
 
 ## 1. Kelly Position Sizing (enable after 100 logged trades)
 
@@ -36,6 +38,8 @@ Example: winrate 55%, payoff 2:1 → f = 0.55 − 0.45/2 = 32.5% → practice 8%
 | Daily loss > 8% | **stop trading for the day** | stop |
 
 Snowball essence: **full trend exposure when winning in a row; automatic slowdown when losing in a row.**
+
+> **The ladder's Normal-row numbers (Main 25% / Lottery 20%) and the 8% daily stop row are reference defaults** — Main normal % → profile `positionStyle.mainNormalPct`, lottery % → `lotteryPerTradePct`; the 8% daily stop is HARD (profile can only tighten). The win/loss-day multiples (30%/15%) are fixed anti-martingale behavior, not profile-driven.
 
 ## 3. Hard Risk Numbers (update as equity grows)
 
@@ -59,7 +63,7 @@ Snowball essence: **full trend exposure when winning in a row; automatic slowdow
 - 450 → 700: withdraw again
 - Always keep only a part of the profit at risk.
 
-**Max-drawdown circuit-breakers:**
+**Max-drawdown circuit-breakers** (**HARD — not profile-driven, cannot be loosened**):
 - 25% drawdown from high → halve all positions, review for one week.
 - 40% drawdown → stop live trading for 2 weeks; simulation + log review only.
 - (2600U high, 25% = exit line at 1950U.)
