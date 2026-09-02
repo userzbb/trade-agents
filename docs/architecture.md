@@ -20,7 +20,7 @@
                     ▼
 ┌─ 能力层（本插件内）─────────────────────────────────────┐
 │  references/00-10  策略知识库 + 引擎桥接文档（唯一真相源） │
-│  scripts/          分析工具箱（14 个零依赖脚本）           │
+│  scripts/          分析工具箱（分析/引擎桥/profile/vector）│
 │  mcp/binance-mcp-server  行情/账户 MCP（confirm:true）   │
 └───────────────────┬───────────────────────────────────┘
                     ▼
@@ -82,5 +82,7 @@
 ## 唯一真相源与防漂移
 
 - skill 层唯一真相源 = `skills/trade-assistant/`（本插件内）。
-- 独立分发镜像 `D:\claude-dev\skills\trade-assistant`（npx skills 路径）只读镜像，改动后需同步。
-- 任何策略规则或 binance 决策表变更：修改真相源 → 同步镜像 → 检查 agents 引用。三处保持对齐。
+- 旧镜像 `D:\claude-dev\skills\trade-assistant` **已废弃**：不同步、不维护、不引用（CLAUDE.md 声明）。`npx skills add userzbb/trade-agents` 从本插件仓库直接装 skill。
+- 个人风险画像 `D:\trade\strategy-profile.json`（`TRADE_HOME` 下，`profile.mjs` 管理）覆盖 references 的数值默认（equity/杠杆/仓位/红线）；安全协议硬不可画像化。
+- 环境变量正确性：会话首个交易请求跑 `scripts/envcheck.mjs` 环境自检（当前进程 env vs Windows 用户环境），见 SKILL.md「Environment Self-Check」。
+- 任何策略规则或决策表变更：修改真相源 `skills/trade-assistant/` → 检查 agents/文档引用（无镜像可同步）。三处保持对齐：references ↔ agents 引用 ↔ 用户输出模板。

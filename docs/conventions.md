@@ -87,17 +87,14 @@ docs/*.md             # 用户可读，中文
 - 写操作一律走 CONFIRM 协议，工具层强制 `confirm:true`。
 - 不把敏感信息写进复盘/周报 md。
 
-## 9. 架构图规范（archify 图必须留 spec 源）
+## 9. 架构文档规范（md 为真相源，不用可视化架构图）
 
-> 教训：`docs/trade-agents-architecture.html` 由 archify 生成，早期提交只留 HTML、丢 JSON spec，导致后续无法更新（须整图重建）。本规范防止复发。
+> 决策（2026-09-02）：可视化架构图（archify HTML）维护成本高、token 密集、与 md 重复，**已废弃**。`docs/trade-agents-architecture.html` 与 `docs/architecture-v0.3.json` 已从仓库删除（git 历史可回溯）。教训保留：凡"生成产物 + 源"并存，必须留可编辑源；但架构图直接以 md 承载，不再引入生成链。
 
-- **架构图 = JSON spec 源 + 生成的 HTML，两者都提交**。
-  - spec 源放 `docs/<name>.json`（如 `docs/architecture-v0.3.json`），是**可编辑真相源**。
-  - HTML 是 archify 渲染产物（`node bin/archify.mjs deliver <type> <spec>.json <out>.html`），仅当 spec 变更时重新生成，**不手改 HTML**。
-- spec 头部记 `meta.repository = { url, revision }` 记录生成时仓库版本。
-- 用 archify 的 `validate`（`--quality showcase`）验收；几何诊断（标签重叠/边穿越）按诊断修复 spec，不通过 hard-edit HTML 掩盖。
-- 架构变更（新增组件/引擎/数据层/安全机制）时：先更新 spec JSON → validate → deliver → 提交（spec + HTML 同 commit，消息含架构变更摘要）。
-- 生成命令记录在 spec 的 `meta` 或文档注释，便于复现。
+- **架构文档真相源 = `docs/architecture.md`（markdown）**：分层 ASCII 视图 + 组件职责矩阵 + 关键数据流 + 依赖模型。更新成本低、diff 可读、token 高效，日常开发直接改它。
+- 架构变更（新增/改组件、引擎、数据层、安全机制、个人画像等）时：**同步更新 `docs/architecture.md`**；涉及开发约定则更新本 `docs/conventions.md`。两者都要维护，不允许只改代码不更文档。
+- **不使用** archify / 生成 HTML 架构图；不维护架构 spec JSON。确有向外部读者展示的临时需要时，用 `docs/architecture.md` 内的 ASCII 分层图即可。
+- 所有 md 文档需随代码演进维护；文档是项目一等公民（README/docs/*.md/skill references），不是发布后一次性的说明。
 
 ## 10. Agent 开发规范
 
