@@ -67,15 +67,18 @@ docs/*.md             # 用户可读，中文
 | `fix` | 修复 |
 | `docs` | 文档 |
 | `refactor` | 重构 |
-| `sync` | 镜像同步 |
+| `release` | 发布（bump plugin.json version） |
+
+**发布纪律（CLAUDE.md Common tasks 同规则）**：
+- 任何**用户可见功能改动**（skill/references/agents/MCP 行为变化）在 push 前必须 bump `.claude-plugin/plugin.json` 的 `version`（semver）——否则 marketplace 用户 `claude plugin update` 见 "already at latest" 拉不到新内容。
+- 发布流：`feat/fix/docs` 提交 → `release` bump 提交 → push → `claude plugin marketplace update <name>` 验证。
 
 ## 7. 防漂移规范（唯一真相源）
 
 1. **skill 唯一真相源 = `skills/trade-assistant/`**（本插件内）。
-2. 改完 skill 后**必须**同步镜像 `D:\claude-dev\skills\trade-assistant`（`diff -rq` 验证）。
-3. agents **不复制** skill 的环境事实/决策表大段，引用 SKILL.md。
-4. 策略规则或 binance 决策表变更传播链：真相源 → 镜像 → agents 引用。
-5. 不在镜像里直接改（那是产物，不是源）。
+2. agents **不复制** skill 的环境事实/决策表大段，引用 SKILL.md。
+3. 策略规则或 binance 决策表变更传播链：真相源 → agents 引用（SKILL.md references guide）。
+4. 已废弃：旧的独立分发镜像 `D:\claude-dev\skills\trade-assistant` 不同步、不维护、不引用（CLAUDE.md 已声明 deprecated）。
 
 ## 8. 安全规范
 
@@ -83,3 +86,26 @@ docs/*.md             # 用户可读，中文
 - 密钥走环境变量（`BINANCE_API_KEY/SECRET` 或 profile），不落库不落 md。
 - 写操作一律走 CONFIRM 协议，工具层强制 `confirm:true`。
 - 不把敏感信息写进复盘/周报 md。
+
+## 9. 架构图规范（archify 图必须留 spec 源）
+
+> 教训：`docs/trade-agents-architecture.html` 由 archify 生成，早期提交只留 HTML、丢 JSON spec，导致后续无法更新（须整图重建）。本规范防止复发。
+
+- **架构图 = JSON spec 源 + 生成的 HTML，两者都提交**。
+  - spec 源放 `docs/<name>.json`（如 `docs/architecture-v0.3.json`），是**可编辑真相源**。
+  - HTML 是 archify 渲染产物（`node bin/archify.mjs deliver <type> <spec>.json <out>.html`），仅当 spec 变更时重新生成，**不手改 HTML**。
+- spec 头部记 `meta.repository = { url, revision }` 记录生成时仓库版本。
+- 用 archify 的 `validate`（`--quality showcase`）验收；几何诊断（标签重叠/边穿越）按诊断修复 spec，不通过 hard-edit HTML 掩盖。
+- 架构变更（新增组件/引擎/数据层/安全机制）时：先更新 spec JSON → validate → deliver → 提交（spec + HTML 同 commit，消息含架构变更摘要）。
+- 生成命令记录在 spec 的 `meta` 或文档注释，便于复现。
+
+## 10. Agent 开发规范
+
+> 所有 agent 开发必须遵循 Claude Code 的 plugin-dev 规范（本机已装 `plugin-dev` 插件）。
+
+- **新增/修改 agent**：使用 `plugin-dev:agent-development` skill 的规范（frontmatter 必填 name/description/model/color/tools；`When to invoke` 区块；触发场景 2–4 个）。
+- **校验**：改完跑 `bash <plugin-dev>/skills/agent-development/scripts/validate-agent.sh agents/<name>.md`。
+- **安全门**：agent 若持 Bash，正文顶部须有 "Absolute Gate"（资金操作/引擎状态变更只路由回 CONFIRM，绝不执行）——见 `agents/binance-orchestrator.md` 范例。
+- **触发描述**：description 单行标量（勿块标量）；触发词保留中文；2–4 个触发场景 prose。
+- **引用不复制**：agent 不复制 SKILL.md 环境事实/决策表大段，引用 SKILL.md / references。
+- **开发 agent（本项目扩展开发）**：遵循 `docs/development.md` 的扩展步骤 + 本 conventions.md。

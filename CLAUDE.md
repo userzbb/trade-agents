@@ -30,7 +30,7 @@ Single installable Claude Code plugin for the Binance USDT-M perpetual futures s
 
 - **Change a strategy rule** → edit `references/<NN>-*.md` (English), update the SKILL.md references guide table if filenames change.
 - **Add a script** → `skills/trade-assistant/scripts/` (zero-dep, comments English, user output Chinese); add a row to the toolbox tables in SKILL.md + `docs/skill-guide.md` + `docs/usage.md`.
-- **Add an agent** → `agents/<kebab-name>.md` with frontmatter (`name`/`description`/`model: inherit`/`color`/`tools`) + a `When to invoke` section; validate with `validate-agent.sh`; update `docs/agents.md`.
+- **Add an agent** → follow `plugin-dev:agent-development` skill conventions + `docs/conventions.md` §10; `agents/<kebab-name>.md` with frontmatter (`name`/`description`/`model: inherit`/`color`/`tools`) + a `When to invoke` section; validate with `validate-agent.sh`; update `docs/agents.md`.
 - **Edit the MCP server** → `mcp/binance-mcp-server.mjs`; keep `confirm: true` on every write tool.
 - **Vector index** → `node skills/trade-assistant/scripts/vector.mjs index` (cache `D:/trade/vector-index.json`, gitignored).
 - **Release a user-facing change** → bump `version` in `.claude-plugin/plugin.json` (semver) BEFORE pushing, so marketplace `plugin update` pulls it. Without a version bump, external users' `claude plugin update` sees "already at latest" and never gets the new content.
