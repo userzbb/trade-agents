@@ -1,6 +1,6 @@
 {
   "name": "trade-agents",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Binance USDT-M perpetual futures system — single install for all capabilities. Bundles: trade-assistant skill (复盘/周报/月报 md document generation + /binance ecosystem orchestration, English skill layer / Chinese user output) with strategy references and analysis toolbox; two agents (retrospective-writer, binance-orchestrator); Binance market-data & order MCP server; local BM25 vector retrieval over retrospectives. Strongly depends on the external /binance skill (binance-cli) for data and execution.",
   "author": {
     "name": "zizim"
