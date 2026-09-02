@@ -232,6 +232,47 @@ export function probeDeps({ run, nodeMajor = Number(process.versions.node?.split
   return { rows, warns };
 }
 
+// Network reachability — read-only. fapi must go THROUGH the local proxy
+// (direct is blocked in CN). Engine ports warn-only (optional engines).
+export function probeNet({ run, proxy = 'http://127.0.0.1:7897', ms = 6000, platform = process.platform } = {}) {
+  const rows = []; let errs = 0, warns = 0;
+  const nullDev = platform === 'win32' ? 'NUL' : '/dev/null';
+  const real = (url, viaProxy) => {
+    const args = ['-sS', '-m', String(Math.ceil(ms / 1000)), '-o', nullDev, '-w', '%{http_code}'];
+    if (viaProxy) args.push('-x', proxy);
+    args.push(url);
+    try {
+      const out = String(execFileSync('curl', args, { encoding: 'utf8', timeout: ms, windowsHide: true })).trim();
+      const code = Number(out) || 0;
+      return { ok: code >= 200 && code < 500, code };   // 401/403 = up (auth)
+    } catch (e) { return { ok: false, code: 0 }; }
+  };
+  const R = run || real;
+  const ping = (label, url, viaProxy) => R(url, viaProxy);
+
+  const fapiVia = ping('fapi-via-proxy', 'https://fapi.binance.com/fapi/v1/ping', true);
+  const fapiDirect = ping('fapi-direct', 'https://fapi.binance.com/fapi/v1/ping', false);
+  if (fapiVia.ok) rows.push({ level: 'ok', text: `币安 fapi（经代理 ${proxy}）OK` });
+  else {
+    errs += 1;
+    rows.push({ level: 'err', text: `币安 fapi 经代理 ${proxy} 不通 → 行情/交易不可用。检查 Clash 是否在 7897、代理是否连上。${fapiDirect.ok ? '（直连反而通 → 当前脚本强制走代理，可 BINANCE_PROXY 指到可用代理）' : '（直连也不通 → 被墙或断网）'}` });
+  }
+  if (!fapiVia.ok && fapiDirect.ok) { warns += 1; rows.push({ level: 'warn', text: '直连 fapi 通、代理不通：网络层 OK 但代理配置错，脚本会失败。' }); }
+
+  // engines (default REST ports; warn-only)
+  const engines = [
+    ['Freqtrade', 'http://127.0.0.1:8080/api/v1/ping'],
+    ['Hummingbot API', 'http://127.0.0.1:8000/'],
+    ['NFI', 'http://127.0.0.1:8989/api/v1/ping'],
+  ];
+  for (const [name, url] of engines) {
+    const r = ping(name, url, false);
+    if (r.ok) rows.push({ level: 'ok', text: `${name} ${url} 通` });
+    else { warns += 1; rows.push({ level: 'warn', text: `${name} ${url} 不通（未启动或未部署；要用它先启动引擎）` }); }
+  }
+  return { rows, errs, warns };
+}
+
 function main() {
   const userEnv = userEnvReader();
   const res = analyzeEnv({ procEnv: process.env, userEnv, probes: PROBES() });

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const ENVCHECK = join(ROOT, 'skills', 'trade-assistant', 'scripts', 'envcheck.mjs');
-const { analyzeEnv, probeDeps } = await import('../skills/trade-assistant/scripts/envcheck.mjs');
+const { analyzeEnv, probeDeps, probeNet } = await import('../skills/trade-assistant/scripts/envcheck.mjs');
 
 const W = 'E:\\trade-bots\\hummingbot\\mcp'; // 文档 canonical（仅当探测路径不存在时作为 setx 建议）
 const all = (res) => res.rows.map((r) => r.text).join('\n');
@@ -146,4 +146,30 @@ test('Task2: probeDeps 全缺 + Node 旧 → 全 warn、确定性（非 win 无 
   assert.equal(res.warns, 4);
   assert.ok(res.rows.every((r) => r.level === 'warn'), res.rows.map((r) => r.text).join('\n'));
   assert.match(res.rows.map((r) => r.text).join('\n'), /Node 24（需 ≥26/);
+});
+
+// Task3: probeNet — injected runner contract is R(url, viaProxy) (see brief Step 3:
+// `const R = run || real; const ping = (label, url, viaProxy) => R(url, viaProxy);`).
+test('Task3: probeNet — fapi 经代理通 + Freqtrade up + Hummingbot down', () => {
+  const netRun = (url, viaProxy) => {
+    if (url.includes('fapi.binance.com') && viaProxy) return { ok: true, code: 200 };
+    if (url.includes('fapi.binance.com')) return { ok: false, code: 0 };   // 直连不通（被墙）
+    if (url.includes('127.0.0.1:8080')) return { ok: true, code: 200 };
+    if (url.includes('127.0.0.1:8000')) return { ok: false, code: 0 };
+    return { ok: false, code: 0 };
+  };
+  const res = probeNet({ run: netRun, ms: 3000 });
+  const txt = res.rows.map((r) => r.text).join('\n');
+  assert.equal(res.errs, 0);
+  assert.match(txt, /币安 fapi.*代理.*OK/);
+  assert.match(txt, /Freqtrade.*8080.*通/);
+  assert.match(txt, /Hummingbot.*8000.*不通/);
+  assert.match(txt, /NFI.*8989/);
+});
+
+test('Task3: probeNet — 代理 ping 失败 → err', () => {
+  const bad = (url, viaProxy) => ({ ok: false, code: 0 });
+  const res = probeNet({ run: bad, ms: 500 });
+  assert.ok(res.errs >= 1);
+  assert.match(res.rows.map((r) => r.text).join('\n'), /代理.*不通|fapi.*不通/);
 });
