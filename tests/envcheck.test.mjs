@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -93,4 +93,25 @@ test('envcheck CLI: 进程提供 HUMMINGBOT_MCP_DIR → exit 0 + 中文摘要', 
   });
   assert.match(out, /环境自检/);
   assert.match(out, /HUMMINGBOT_MCP_DIR/);
+});
+
+test('Task1: 其他路径变量设 MSYS /x/ → warn（非 err）并给转换建议', () => {
+  const res = analyzeEnv({ procEnv: { HUMMINGBOT_MCP_DIR: W, TRADE_HOME: '/d/trade' }, userEnv: { HUMMINGBOT_MCP_DIR: W }, probes: probesNoMCP });
+  assert.equal(res.errCount, 0);            // MSYS 在可选变量上只 warn
+  assert.ok(res.warnCount >= 1, all(res));
+  assert.match(all(res), /TRADE_HOME.*MSYS/);
+  assert.match(all(res), /setx TRADE_HOME "D:\\trade"/); // 转换建议
+});
+
+test('Task1: HUMMINGBOT_MCP_DIR 指向目录无 main.py → warn', () => {
+  const res = analyzeEnv({ procEnv: {}, userEnv: { HUMMINGBOT_MCP_DIR: probesNoMCP.hummingbotMCP }, probes: probesNoMCP });
+  assert.equal(res.errCount, 0);
+  assert.match(all(res), /没找到 main\.py/);
+});
+
+test('Task1: HUMMINGBOT_MCP_DIR 指向含 main.py 目录 → 无该 warn', () => {
+  mkdirSync(probesNoMCP.hummingbotMCP, { recursive: true }); // R2: dir must exist before write
+  writeFileSync(join(probesNoMCP.hummingbotMCP, 'main.py'), '');
+  const res = analyzeEnv({ procEnv: {}, userEnv: { HUMMINGBOT_MCP_DIR: probesNoMCP.hummingbotMCP }, probes: probesNoMCP });
+  assert.ok(!all(res).includes('没找到 main.py'), all(res));
 });

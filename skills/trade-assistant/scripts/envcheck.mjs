@@ -16,6 +16,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 // Canonical deployment dirs (informational probes only — engines can live
 // anywhere; a miss never blocks, it only shapes the setx suggestion).
@@ -28,6 +29,8 @@ const PROBES = () => ({
 // Vars the plugin consumes. `def` = fallback when unset; `canon` = suggested
 // Windows value for the required one. `mask` = never echo the value (default
 // credentials already in docs should not be re-shown each session).
+// `onlyIfSet` = when unset, print nothing (path overrides have no default).
+// `path` = value is a filesystem path → warn if not a Windows absolute path.
 const MANAGED = [
   {
     key: 'HUMMINGBOT_MCP_DIR', severity: 'required-if-used', def: '', canon: 'E:\\trade-bots\\hummingbot\\mcp', mask: false,
@@ -41,7 +44,47 @@ const MANAGED = [
   { key: 'FREQTRADE_URL', severity: 'optional', def: 'http://127.0.0.1:8080', mask: false, consumer: 'engines.mjs REST' },
   { key: 'FREQTRADE_USERNAME', severity: 'optional', def: 'freqtrader', mask: false, consumer: 'engines.mjs REST' },
   { key: 'FREQTRADE_PASSWORD', severity: 'optional', def: 'hb_p1_ft_2026', mask: true, consumer: 'engines.mjs REST' },
+  { key: 'TRADE_DB', severity: 'optional', def: '', mask: false, onlyIfSet: true, path: true, consumer: 'db.mjs SQLite 路径覆盖（默认 ${TRADE_HOME}/data/trade.db）' },
+  { key: 'VECTOR_INDEX_PATH', severity: 'optional', def: '', mask: false, onlyIfSet: true, path: true, consumer: 'vector.mjs 索引缓存覆盖（默认 ${TRADE_HOME}/vector-index.json）' },
 ];
+
+// Git-Bash MSYS drive path (/x/rest) → Windows path (X:\rest), or null if v is
+// not an MSYS drive path. Windows-native processes cannot resolve /x/... paths.
+export function msysFix(v) {
+  const m = v.trim().match(/^\/\s*([a-zA-Z])\/(.*)$/);
+  if (!m) return null;
+  return `${m[1].toUpperCase()}:\\${m[2]}`;
+}
+
+// Unified path check over one set value. Applies to every var whose value is an
+// MSYS drive path (blocking err for HUMMINGBOT_MCP_DIR — v1 semantics; warn with
+// a setx conversion for every other var) and, for vars marked path:true, a warn
+// when the value is not a Windows absolute path. Returns {handled, level?, text?,
+// fix?}; handled=false means no path issue and the caller proceeds as normal.
+function applyPathIssues(m, v, src) {
+  if (/^\/[a-zA-Z]\//.test(v)) {
+    if (m.key === 'HUMMINGBOT_MCP_DIR') {
+      return {
+        handled: true, level: 'err',
+        text: `HUMMINGBOT_MCP_DIR = ${v}（${src}）—— 这是 Git Bash MSYS 路径(/x/...)，Windows 原生进程(uv)解析不了；改用绝对路径 setx HUMMINGBOT_MCP_DIR "${m.canon}"。`,
+        fix: `setx HUMMINGBOT_MCP_DIR "${m.canon}"`,
+      };
+    }
+    const win = msysFix(v);
+    return {
+      handled: true, level: 'warn',
+      text: `${m.key} = ${v}（${src}）—— MSYS 路径(/${v[1]}/)，Windows 原生进程解析不了；改 ${win}。建议 setx ${m.key} "${win}"`,
+      fix: `setx ${m.key} "${win}"`,
+    };
+  }
+  if (m.path === true && !/^[A-Za-z]:[\\/]/.test(v)) {
+    return {
+      handled: true, level: 'warn',
+      text: `${m.key} = ${v}（${src}）—— 非 Windows 绝对路径(盘符:\\ 开头)，Windows 原生进程可能解析不了。`,
+    };
+  }
+  return { handled: false };
+}
 
 // Pure analysis over injected inputs → testable without registry/network.
 // procEnv: object (process.env of the running session).
@@ -68,18 +111,29 @@ export function analyzeEnv({ procEnv = {}, userEnv = null, probes = PROBES() } =
         continue;
       }
       const v = String(inProc ? procEnv[m.key] : userEnv[m.key]);
-      if (/^\/[a-zA-Z]\//.test(v)) {
+      const issue = applyPathIssues(m, v, src(m));
+      if (issue.handled) {
         errCount += 1;
-        rows.push({ level: 'err', text: `HUMMINGBOT_MCP_DIR = ${v}（${src(m)}）—— 这是 Git Bash MSYS 路径(/x/...)，Windows 原生进程(uv)解析不了；改用绝对路径 setx HUMMINGBOT_MCP_DIR "${m.canon}"。` });
-        fixes.push(`setx HUMMINGBOT_MCP_DIR "${m.canon}"`);
+        rows.push({ level: 'err', text: issue.text });
+        fixes.push(issue.fix);
         continue;
       }
       if (!/^[A-Za-z]:[\\/]/.test(v)) {
         warnCount += 1;
         rows.push({ level: 'warn', text: `HUMMINGBOT_MCP_DIR = ${v}（${src(m)}）—— 非 Windows 绝对路径(盘符:\\ 开头)，请核对。` });
-      } else if (existsSync(probes.hummingbotMCP) && v.replace(/\\/g, '/').toLowerCase() !== probes.hummingbotMCP.replace(/\\/g, '/').toLowerCase()) {
-        warnCount += 1;
-        rows.push({ level: 'warn', text: `HUMMINGBOT_MCP_DIR = ${v}（${src(m)}）—— 与默认部署 ${probes.hummingbotMCP} 不同（引擎可装别处，确认即可）。` });
+      } else {
+        if (existsSync(probes.hummingbotMCP) && v.replace(/\\/g, '/').toLowerCase() !== probes.hummingbotMCP.replace(/\\/g, '/').toLowerCase()) {
+          warnCount += 1;
+          rows.push({ level: 'warn', text: `HUMMINGBOT_MCP_DIR = ${v}（${src(m)}）—— 与默认部署 ${probes.hummingbotMCP} 不同（引擎可装别处，确认即可）。` });
+        }
+        // Directory-pointer check: HUMMINGBOT_MCP_DIR must be the hummingbot/mcp
+        // repo root (uv --directory <dir> runs main.py). A missing main.py means
+        // the var points somewhere else (e.g. the hummingbot install root).
+        const mainPy = join(v, 'main.py');
+        if (!existsSync(mainPy)) {
+          warnCount += 1;
+          rows.push({ level: 'warn', text: `HUMMINGBOT_MCP_DIR = ${v} —— 该目录下没找到 main.py，请确认指向 hummingbot/mcp 仓库根（uv --directory 跑 main.py 会失败）。` });
+        }
       }
       if (inProc && userEnv !== null && !inUser) {
         warnCount += 1;
@@ -96,12 +150,20 @@ export function analyzeEnv({ procEnv = {}, userEnv = null, probes = PROBES() } =
     }
 
     // optional vars — defaulted, presence is informational
+    if (m.onlyIfSet && !inProc && !inUser) continue; // no default-noise for path overrides
     if (!inProc && !inUser) {
       rows.push({ level: 'info', text: `${m.key}  未设 → 用默认 ${m.mask ? '(已内置默认凭据)' : m.def}` });
     } else if (m.mask) {
       rows.push({ level: 'ok', text: `${m.key}  (已设，${src(m)})` });
     } else {
       const v = String(inProc ? procEnv[m.key] : userEnv[m.key]);
+      const issue = applyPathIssues(m, v, src(m));
+      if (issue.handled) {
+        if (issue.level === 'err') errCount += 1; else warnCount += 1;
+        rows.push({ level: issue.level, text: issue.text });
+        if (issue.fix) fixes.push(issue.fix);
+        continue;
+      }
       rows.push({ level: 'ok', text: `${m.key} = ${v}（${src(m)}）` });
       if (inProc && userEnv !== null && !inUser) rows.push({ level: 'info', text: `${m.key}  仅当前进程有；未写入 Windows 用户环境（需固化用 setx）。` });
     }
