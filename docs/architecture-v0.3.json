@@ -6,41 +6,27 @@
     "quality_profile": "showcase",
     "locale": "zh-CN"
   },
-  "layout": { "mode": "grid", "cols": 5 },
   "components": [
-    {"id": "user", "type": "external", "label": "用户", "sublabel": "中文交互", "row": 0, "col": 0},
-    {"id": "skill", "type": "backend", "label": "trade-assistant Skill", "sublabel": "分析·编排·CONFIRM 门·多视角", "row": 1, "col": 1},
-    {"id": "agents", "type": "backend", "label": "Agents", "sublabel": "orchestrator·复盘", "row": 1, "col": 0},
-    {"id": "mcpserver", "type": "backend", "label": "Binance MCP", "sublabel": "行情/账户·人场门", "row": 1, "col": 2},
-    {"id": "refs", "type": "database", "label": "references", "sublabel": "策略库·参考默认", "row": 2, "col": 0},
-    {"id": "profile", "type": "database", "label": "Strategy Profile", "sublabel": "strategy-profile.json", "row": 2, "col": 1},
-    {"id": "scripts", "type": "backend", "label": "scripts 工具箱", "sublabel": "solve/pyramid/ta…", "row": 2, "col": 2},
-    {"id": "binancecli", "type": "cloud", "label": "/binance+cli", "sublabel": "行情·手动执行", "row": 3, "col": 0},
-    {"id": "freqtrade", "type": "cloud", "label": "Freqtrade", "sublabel": "趋势回测/执行", "row": 3, "col": 1},
-    {"id": "hummingbot", "type": "cloud", "label": "Hummingbot", "sublabel": "网格/做市/套利", "row": 3, "col": 2},
-    {"id": "nfi", "type": "cloud", "label": "NFI", "sublabel": "现成趋势规则池", "row": 3, "col": 3},
-    {"id": "datalayer", "type": "database", "label": "D:\\trade", "sublabel": "SQLite·复盘·画像", "row": 4, "col": 1},
-    {"id": "exchange", "type": "external", "label": "Binance", "sublabel": "fapi 合约", "row": 5, "col": 2}
+    {"id": "devdocs", "type": "backend", "label": "开发/文档体系", "sublabel": "CLAUDE.md · docs · specs/plans · tests", "pos": [40, 40], "size": [230, 66]},
+    {"id": "user", "type": "external", "label": "用户", "sublabel": "中文交互", "pos": [40, 260], "size": [120, 60]},
+    {"id": "skill", "type": "backend", "label": "trade-assistant Skill", "sublabel": "分析·编排·CONFIRM 门", "pos": [300, 260], "size": [190, 70]},
+    {"id": "engines", "type": "cloud", "label": "执行引擎", "sublabel": "Freqtrade·Hummingbot·NFI·/binance", "pos": [740, 260], "size": [270, 70]},
+    {"id": "exchange", "type": "external", "label": "Binance", "sublabel": "fapi 合约", "pos": [1070, 260], "size": [140, 60]},
+    {"id": "agents", "type": "backend", "label": "Agents", "sublabel": "orchestrator·复盘", "pos": [40, 470], "size": [150, 56]},
+    {"id": "refs", "type": "database", "label": "references", "sublabel": "策略库·参考默认", "pos": [240, 470], "size": [150, 56]},
+    {"id": "mcpserver", "type": "backend", "label": "Binance MCP", "sublabel": "行情/账户·人场门", "pos": [440, 470], "size": [150, 56]},
+    {"id": "scripts", "type": "backend", "label": "scripts 工具箱", "sublabel": "15 零依赖脚本", "pos": [640, 470], "size": [150, 56]},
+    {"id": "profile", "type": "database", "label": "Strategy Profile", "sublabel": "个人风险画像", "pos": [840, 470], "size": [180, 56]},
+    {"id": "datalayer", "type": "database", "label": "D:\\trade", "sublabel": "SQLite·复盘·画像", "pos": [1070, 470], "size": [150, 56]}
   ],
   "boundaries": [
-    {"kind": "region", "label": "控制面", "wraps": ["skill", "agents", "mcpserver", "refs", "profile", "scripts"]},
-    {"kind": "region", "label": "执行引擎层", "wraps": ["binancecli", "freqtrade", "hummingbot", "nfi"]}
+    {"kind": "region", "label": "控制面（插件）", "wraps": ["skill", "agents", "refs", "mcpserver", "scripts", "profile"]},
+    {"kind": "region", "label": "执行引擎层", "wraps": ["engines", "datalayer"]}
   ],
   "connections": [
     {"id": "u-s", "from": "user", "to": "skill", "label": "中文请求"},
-    {"id": "s-a", "from": "skill", "to": "agents", "label": "委派"},
-    {"id": "s-r", "from": "skill", "to": "refs", "label": "读策略"},
-    {"id": "s-p", "from": "skill", "to": "profile", "label": "读写画像", "variant": "emphasis"},
-    {"id": "s-x", "from": "skill", "to": "scripts", "label": "调分析"},
-    {"id": "x-p", "from": "scripts", "to": "profile", "label": "读 equity/红线"},
-    {"id": "x-b", "from": "scripts", "to": "binancecli", "label": "行情（只读）"},
-    {"id": "m-b", "from": "mcpserver", "to": "binancecli", "label": "下单（人场门）"},
-    {"id": "b-e", "from": "binancecli", "to": "exchange", "label": "手动执行"},
-    {"id": "f-e", "from": "freqtrade", "to": "exchange", "label": "趋势执行"},
-    {"id": "h-e", "from": "hummingbot", "to": "exchange", "label": "网格/做市"},
-    {"id": "n-f", "from": "nfi", "to": "freqtrade", "label": "挂 Freqtrade"},
-    {"id": "s-d", "from": "skill", "to": "datalayer", "label": "复盘/同步"},
-    {"id": "s-f", "from": "skill", "to": "freqtrade", "label": "CONFIRM 路由"},
-    {"id": "s-h", "from": "skill", "to": "hummingbot", "label": "CONFIRM 路由"}
+    {"id": "s-e", "from": "skill", "to": "engines", "label": "CONFIRM 路由", "variant": "emphasis"},
+    {"id": "e-x", "from": "engines", "to": "exchange", "label": "执行"},
+    {"id": "s-a", "from": "skill", "to": "agents", "label": "委派"}
   ]
 }
