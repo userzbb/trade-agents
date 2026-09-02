@@ -1,11 +1,14 @@
-# 10 NFI Bridge (ready-made trend strategy engine — NostalgiaForInfinity)
+# 10 NFI Bridge (ready-made trend strategy pool — NostalgiaForInfinity)
 
 > Content in English. **All user-facing output MUST be in Chinese.**
-> NFI (`iterativv/NostalgiaForInfinity`) is an **optional, recommended, ready-made trend strategy engine**: high-star (3.4k), daily-maintained, CI backtest gate (winrate≥85% / maxDD≤15%), Binance USDT-M futures + shorting supported. Deployed **independently** per its official docker-compose (NOT inside the existing Freqtrade engine). **Zero self-written strategy code** — NFI is the strategy; this skill/agent only assembles config per user intent and runs it.
+> NFI (`iterativv/NostalgiaForInfinity`) is an **optional, recommended, ready-made trend strategy pool**, used as **one cross-validation source for LLM analysis** + a market-wide trend rule pool. High-star (3.4k), daily-maintained, CI backtest gate (winrate≥85% / maxDD≤15%), Binance USDT-M futures + shorting supported. Deployed **independently** per its official docker-compose (NOT inside the existing Freqtrade engine). **Zero self-written strategy code** — NFI is the strategy; this skill/agent only assembles config per user intent and runs it.
+>
+> Official links: repo https://github.com/iterativv/NostalgiaForInfinity · docs https://iterativv.github.io/NostalgiaForInfinity/ · Freqtrade docs https://www.freqtrade.io/
 
 ## Role
 
-- **Ready-made strategy reference**: when the user wants a *proven* trend strategy backtest/scenario (coin selection, cross-validation of a directional read, market-wide scan), route to NFI's official docker-compose `backtesting` / dry-run.
+- **Cross-validation source for LLM analysis**: when trade-assistant has a directional/environment read, cross-check it against NFI's market-wide signal/backtest — multiple independent strategy sources pointing the same way = higher confidence; conflict = downgrade conservative. NOT a replacement for LLM analysis.
+- **Market-wide trend pool** (40-80 pairs, `top_coins` selection): not for single-coin local validation — a single-coin short backtest showing 0 trades is EXPECTED (X7 selects coins market-wide), not a fault. Do NOT download GB-scale full-pair data just to force trades.
 - NOT a market-intelligence tool — funding/LS/orderbook analysis stays in the binance ecosystem + trade-assistant toolbox.
 - Deployed separately → does not occupy the existing Freqtrade engine (port 8080); NFI default API port 8989.
 

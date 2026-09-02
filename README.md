@@ -118,17 +118,22 @@ P1 用 `binance_perpetual_paper_trade` 模拟盘（零 key）；实盘需 `hbot 
 
 ### NFI（可选·推荐）现成趋势策略引擎
 
-NFI 是**可选·推荐**的现成高星趋势策略（非必需）：需要"久经实战的趋势策略回测/交叉验证/全市场扫描"时用它，与现有引擎**独立部署并存**（官方 docker-compose，默认 API 端口 8989，不占 8080）。**零自研策略代码**。
+NFI 是**可选·推荐**的现成高星趋势策略（非必需），定位 = **LLM 研判的交叉验证源之一 + 全市场趋势规则池**：trade-assistant 分析得出方向后，可借 NFI 的信号/回测交叉验证（多策略共同指向才高信心）。与现有引擎**独立部署并存**（官方 docker-compose，API 端口 8989，不占 8080）。**零自研策略代码**。
+
+> ⚠️ NFI（X7）是**全市场选币**策略（40-80 pairs 设计），**不做单币局部出单验证**（单币短期 0 单是正常现象，非故障）——启用时机由 LLM 研判/交叉验证决定。
 
 ```bash
+# 官方仓库 + 文档
+#   repo: https://github.com/iterativv/NostalgiaForInfinity
+#   docs: https://iterativv.github.io/NostalgiaForInfinity/
 cd /e/trade-bots
 git clone https://github.com/iterativv/NostalgiaForInfinity.git nfi && cd nfi
-cp live-account-example.env .env        # 配独立币安子账户 key + API 凭据；DRY_RUN=true
+cp live-account-example.env .env        # 配币安 API key（类型/存放见 docs/nfi-deployment.md）；DRY_RUN=true
 docker compose up -d --build            # 官方 compose，默认策略 NostalgiaForInfinityX7 / futures / 5m
 curl -s http://127.0.0.1:8989/api/v1/ping
 ```
 
-详见 [`docs/nfi-deployment.md`](docs/nfi-deployment.md) 与 `references/10-nfi-bridge.md`。
+详见 [`docs/nfi-deployment.md`](docs/nfi-deployment.md)（部署 + 密钥类型 + 官方链接 + 实测验证记录）与 `references/10-nfi-bridge.md`。
 
 ## 组件
 
