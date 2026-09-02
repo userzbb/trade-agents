@@ -199,6 +199,39 @@ export function readUserEnv() {
 let userEnvReader = readUserEnv;
 export function __setUserEnvReaderForTest(fn) { userEnvReader = fn; }
 
+// Dependency readiness — read-only, local, <1s. warn-only (per-role optional).
+export function probeDeps({ run, nodeMajor = Number(process.versions.node?.split('.')[0]), platform = process.platform } = {}) {
+  const rows = [];
+  let warns = 0;
+  const real = (cmd, args, o = {}) => {
+    try { return { ok: true, out: execFileSync(cmd, args, { encoding: 'utf8', timeout: 5000, windowsHide: true, ...o }).trim() }; }
+    catch (e) { return { ok: false, out: (e.stdout || '').toString().trim() || e.message, code: e.status }; }
+  };
+  const R = run || real;
+  // Node version (hard floor: scripts use node:sqlite)
+  if (nodeMajor < 26) { rows.push({ level: 'warn', text: `Node ${nodeMajor}（需 ≥26，node:sqlite）→ 请升级 Node。` }); warns += 1; }
+  else rows.push({ level: 'ok', text: `Node ${nodeMajor}（≥26 ✓）` });
+  // binance-cli (npm v1.3.0 Windows)
+  const cli = R('binance-cli', ['--version'], {});
+  if (cli.ok) rows.push({ level: 'ok', text: `binance-cli ${cli.out}` });
+  else { rows.push({ level: 'warn', text: `binance-cli 未装/未找到 → 手动数据/执行不可用（npm i -g @binance/binance-cli）。` }); warns += 1; }
+  // uv (Hummingbot MCP runtime)
+  const uv = R('uv', ['--version'], {});
+  if (uv.ok) rows.push({ level: 'info', text: `uv ${uv.out}（hummingbot-mcp）` });
+  else { rows.push({ level: 'warn', text: `uv 未装 → hummingbot-mcp 不可用（若不用 Hummingbot 可忽略）。` }); warns += 1; }
+  // docker (engine runtime)
+  const dc = R('docker', ['version', '--format', '{{.Server.Version}}'], {});
+  if (dc.ok) rows.push({ level: 'info', text: `Docker Desktop ${dc.out}（引擎容器）` });
+  else { rows.push({ level: 'warn', text: `docker 不可达 → Freqtrade/Hummingbot/NFI 引擎容器起不来（若不用引擎可忽略）。` }); warns += 1; }
+  // /binance skill (strong dependency, user-level)
+  if (platform === 'win32') {
+    const p = join(process.env.USERPROFILE || '', '.claude', 'skills', 'binance');
+    if (existsSync(p)) rows.push({ level: 'info', text: `/binance skill 在 ${p}` });
+    else { rows.push({ level: 'warn', text: `/binance skill 未找到（~/.claude/skills/binance）→ 强依赖缺失，npx skills add binance/binance-skills-hub。` }); warns += 1; }
+  }
+  return { rows, warns };
+}
+
 function main() {
   const userEnv = userEnvReader();
   const res = analyzeEnv({ procEnv: process.env, userEnv, probes: PROBES() });

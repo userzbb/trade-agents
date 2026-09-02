@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const ENVCHECK = join(ROOT, 'skills', 'trade-assistant', 'scripts', 'envcheck.mjs');
-const { analyzeEnv } = await import('../skills/trade-assistant/scripts/envcheck.mjs');
+const { analyzeEnv, probeDeps } = await import('../skills/trade-assistant/scripts/envcheck.mjs');
 
 const W = 'E:\\trade-bots\\hummingbot\\mcp'; // 文档 canonical（仅当探测路径不存在时作为 setx 建议）
 const all = (res) => res.rows.map((r) => r.text).join('\n');
@@ -114,4 +114,36 @@ test('Task1: HUMMINGBOT_MCP_DIR 指向含 main.py 目录 → 无该 warn', () =>
   writeFileSync(join(probesNoMCP.hummingbotMCP, 'main.py'), '');
   const res = analyzeEnv({ procEnv: {}, userEnv: { HUMMINGBOT_MCP_DIR: probesNoMCP.hummingbotMCP }, probes: probesNoMCP });
   assert.ok(!all(res).includes('没找到 main.py'), all(res));
+});
+
+test('Task2: probeDeps 依赖探测（fake run）', () => {
+  const calls = [];
+  // run(cmd, args, opts) — cmd is the executable (CLI real = execFileSync(cmd, args)).
+  // Key the fake on cmd, NOT args[0]: probeDeps calls args like ['--version']/['version',...].
+  const run = (cmd, args, opts) => {
+    calls.push(cmd);
+    const bin = cmd;
+    if (bin.includes('uv')) return { ok: true, out: 'uv 0.5.0' };
+    if (bin.includes('docker')) return { ok: false, out: 'error during connect', code: 1 };
+    if (bin.includes('binance-cli')) return { ok: true, out: 'v1.3.0' };
+    throw new Error('no such cmd');
+  };
+  const res = probeDeps({ run, nodeMajor: 26, platform: 'win32' });
+  assert.deepEqual(calls, ['binance-cli', 'uv', 'docker']); // probe order
+  assert.equal(typeof res.warns, 'number');
+  assert.ok(res.warns >= 1, `docker 失败必产生 warn，实际 warns=${res.warns}`);
+  const txt = res.rows.map((r) => r.text).join('\n');
+  assert.match(txt, /Node 26/);          // ok
+  assert.match(txt, /uv/);
+  assert.match(txt, /docker/);           // warn 行（引擎运行时）
+  assert.match(txt, /binance-cli/);
+});
+
+test('Task2: probeDeps 全缺 + Node 旧 → 全 warn、确定性（非 win 无 /binance 行）', () => {
+  const run = (cmd) => ({ ok: false, out: 'not found', code: 127 }); // all commands fail, never throws
+  const res = probeDeps({ run, nodeMajor: 24, platform: 'linux' });
+  assert.equal(res.rows.length, 4); // node + binance-cli + uv + docker（linux 跳过 /binance 分支）
+  assert.equal(res.warns, 4);
+  assert.ok(res.rows.every((r) => r.level === 'warn'), res.rows.map((r) => r.text).join('\n'));
+  assert.match(res.rows.map((r) => r.text).join('\n'), /Node 24（需 ≥26/);
 });
