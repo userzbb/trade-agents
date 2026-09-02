@@ -30,6 +30,20 @@ test('buildToolList: required 反映真实必填', () => {
   assert.equal(byName.place_order.inputSchema.properties.confirm.type, 'boolean');
 });
 
+// ---- 人在场强制：写工具必须 requiresUserInteraction，读工具不得带 ----
+test('buildToolList: 写工具 requiresUserInteraction=true（人场门），读工具不带', () => {
+  const byName = Object.fromEntries(mcp.buildToolList().map((t) => [t.name, t]));
+  for (const w of ['place_order', 'set_stop_loss', 'cancel_order']) {
+    assert.equal(
+      byName[w]._meta?.['anthropic/requiresUserInteraction'], true,
+      `${w} 必须要求用户在场确认`
+    );
+  }
+  for (const r of ['get_klines', 'get_ticker', 'get_balance', 'get_positions']) {
+    assert.equal(byName[r]._meta, undefined, `${r} 只读不应带 requiresUserInteraction`);
+  }
+});
+
 // ---- get_ticker 串行 + 结果形状 ----
 test('get_ticker: 串行请求 price → 24hr', async () => {
   const calls = [];

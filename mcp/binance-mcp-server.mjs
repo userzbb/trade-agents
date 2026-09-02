@@ -106,16 +106,27 @@ const tools = {
   cancel_order: { desc: '撤单（需 confirm=true 确认）', params: ['symbol', 'orderId', 'confirm'], required: ['symbol', 'orderId'] },
 };
 
+// 写操作工具：每次调用都要求真实用户在场批准（anthropic/requiresUserInteraction）。
+// Claude Code 会对带此标志的工具每次弹权限确认，即使 allow 规则/bypassPermissions 也不跳过，
+// subagent 调用会回到真人确认 —— 这是 CONFIRM 协议的人在场技术强制（CLAUDE.md Iron Rule #0）。
+const WRITE_TOOLS = new Set(['place_order', 'set_stop_loss', 'cancel_order']);
+
 export function buildToolList() {
-  return Object.entries(tools).map(([name, t]) => ({
-    name,
-    description: t.desc + '。写操作工具必须传 confirm:true，且受交易工程 CONFIRM 协议约束。',
-    inputSchema: {
-      type: 'object',
-      properties: Object.fromEntries(t.params.map((p) => [p, { type: p === 'confirm' ? 'boolean' : 'string' }])),
-      required: t.required || [],
-    },
-  }));
+  return Object.entries(tools).map(([name, t]) => {
+    const def = {
+      name,
+      description: t.desc + '。写操作工具必须传 confirm:true，且受交易工程 CONFIRM 协议约束。每次调用都需用户在权限窗确认（anthropic/requiresUserInteraction）。',
+      inputSchema: {
+        type: 'object',
+        properties: Object.fromEntries(t.params.map((p) => [p, { type: p === 'confirm' ? 'boolean' : 'string' }])),
+        required: t.required || [],
+      },
+    };
+    if (WRITE_TOOLS.has(name)) {
+      def._meta = { 'anthropic/requiresUserInteraction': true };
+    }
+    return def;
+  });
 }
 
 export async function callTool(name, args) {
