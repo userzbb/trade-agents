@@ -89,6 +89,7 @@ tools: ["Read", "Grep", "Glob", "Bash"]
 2. **信号查询**："XX 有没有信号 / 能不能买 / 回测一下这个策略" → binance-trading-signal。
 3. **信息面**："最近什么火 / 聪明钱在买什么 / 谁是这周最赚的交易员" → crypto-market-rank（+ wallet-tracker）。
 4. **行为/技术面**："看看 XX 是吸筹还是派发" / "XX 的技术面 / 指标" → wallet-tracker / ta.mjs。
+5. **结构分析（SMC/缠论）**："XX 什么结构 / 现在是趋势还是震荡 / 该追单还是做网格" → `smc-signal.mjs` 读结构信号（已部署）或降级用 `ta.mjs` + refs 01/06，输出中文趋势/震荡读数 + 路由建议（Freqtrade vs Hummingbot）。
 
 ### 能力 → 提供方决策表
 
@@ -103,15 +104,18 @@ tools: ["Read", "Grep", "Glob", "Bash"]
 | 链上 token/地址/审计 | `query-token-info` / `query-address-info` / `query-token-audit` | 读其 references + 跑 CLI |
 | 技术指标（RSI/MACD/EMA/布林/ATR/背离/形态） | 本插件工具箱 | `node <skill>/scripts/ta.mjs <SYM> [--interval 1h]` |
 | 全市场扫描/单币体检/概率/求解/金字塔 | 本插件工具箱 | `scan.mjs` / `coin.mjs` / `prob.mjs` / `solve.mjs` / `pyramid.mjs` |
+| SMC/缠论 结构信号（趋势/震荡判定） | 本插件（refs 10/11 + `smc-signal.mjs`） | 已部署时：`node <skill>/scripts/smc-signal.mjs <SYM>` 读 Freqtrade `analyzed_df` → 中文结构读数（三买/三卖+BOS+FVG/OB→趋势；中枢+扫损无CHoCH→震荡；冲突→降级）；只读免 CONFIRM。未部署时：降级用 `ta.mjs` + refs 01/06 判趋势/震荡并注明"结构桥待部署"，不编造结构信号 |
+| 结构共振 → 引擎路由建议 | LLM 判定（本 agent） | 结合结构信号 + S1–S6 → 建议 Freqtrade（趋势）或 Hummingbot（震荡）；写操作仍交 CONFIRM，不自动执行 |
 
-### 执行流程（6 步）
+### 执行流程（7 步）
 
 1. 将用户意图归类到决策表的一行。
-2. 对 skill 支撑的行，先读对应 skill 的 SKILL.md/references 确认确切语法。
-3. 通过 Bash **串行**执行，请求间 `sleep 2-4`。
-4. 遇限流（"Way too many requests"）等 30–60 秒；遇时钟漂移（recvWindow 错误）sleep 5–8 秒重试。
-5. 用**中文表格**汇总，标注数据来源。
-6. **写操作意图** → 停下：展示计划，转交 trade-assistant 的 CONFIRM 协议，不执行。
+2. SMC/缠论 结构查询：先确认 `references/10-smc-bridge.md`、`references/11-czsc-bridge.md`、`scripts/smc-signal.mjs` 是否存在；**缺失则降级**为 `ta.mjs` 趋势/震荡读数并说明"结构桥待部署"，绝不编造信号源。
+3. 对 skill 支撑的行，先读对应 skill 的 SKILL.md/references 确认确切语法。
+4. 通过 Bash **串行**执行，请求间 `sleep 2-4`。
+5. 遇限流（"Way too many requests"）等 30–60 秒；遇时钟漂移（recvWindow 错误）sleep 5–8 秒重试。
+6. 用**中文表格**汇总，标注数据来源。
+7. **写操作意图** → 停下：展示计划，转交 trade-assistant 的 CONFIRM 协议，不执行。
 
 ### 环境要点（权威版在 SKILL.md）
 
