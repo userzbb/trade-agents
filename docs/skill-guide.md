@@ -39,7 +39,7 @@
 | `06-pyramid-and-psychology.md` | 金字塔三批结构、加仓否决条件、三层共振、博弈心理 | 建仓结构、加仓决策、心理自检 |
 | `07-trade-log-and-review-template.md` | 交易日志模板 + 复盘报告模板（**中文输出正文**） | 记录每笔；全部平仓后生成复盘 |
 
-## 脚本工具箱（scripts/，15 个零依赖 Node 脚本）
+## 脚本工具箱（scripts/ 零依赖 Node 脚本）
 
 | 脚本 | 用途 | 用法 | 何时用 |
 |---|---|---|---|
@@ -57,6 +57,9 @@
 | `vector.mjs index\|query` | BM25 检索相似复盘/策略知识 | `node vector.mjs query "复盘 ARB" --filter review` | 复盘时找相似案例（详见 docs/vector-search.md） |
 | `db.mjs` | SQLite 封装（node:sqlite） | 被其他脚本 import | — |
 | `_lib.mjs` | 共享：代理请求/重试/限流 + 动态分级 classify() | 被其他脚本 import | — |
+| `engines.mjs` | 三引擎统一看板（Freqtrade/Hummingbot/binance 持仓+盈亏） | `node engines.mjs` | "看三引擎状态/统一看板"；会话开始 |
+| `envcheck.mjs` | 环境自检：当前进程 env vs Windows 用户环境(注册表)；缺 `HUMMINGBOT_MCP_DIR` 或 MSYS `/x/` 路径 → 给 setx 方案 | `node envcheck.mjs` | 每次会话首个交易请求自动跑一次；"环境自检/修环境变量" |
+| `profile.mjs view\|set\|clear` | 个人风险画像读写（strategy-profile.json） | `node profile.mjs set --equity 600` | 首次采参/风险风格变更 |
 
 所有脚本自动处理代理/重试/限流。在 `scripts/` 目录运行。
 

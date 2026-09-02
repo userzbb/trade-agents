@@ -108,6 +108,8 @@ setx HUMMINGBOT_API_PASSWORD "hb_p1_paper_2026"
 > - PowerShell：`$env:HUMMINGBOT_MCP_DIR = 'E:\trade-bots\hummingbot\mcp'`（其余类推）
 > - Git Bash：`export HUMMINGBOT_MCP_DIR=/e/trade-bots/hummingbot/mcp` —— `/e/` 是 Git Bash 对 `E:\` 的 MSYS 写法，**PowerShell/cmd 无效**（会被当成相对路径）。
 
+> **首次调用 skill 会自动跑一次环境自检**（`scripts/envcheck.mjs`，只读）：对照「当前进程 env」与「Windows 用户环境」，发现 `HUMMINGBOT_MCP_DIR` 缺失/MSYS 路径等问题时，agent 会展示 setx 方案、等你 CONFIRM 后才执行；改完需**完全重启 Claude Code** 生效（`.mcp.json`/MCP 在启动时读环境）。也可直接说「环境自检」/「修环境变量」手动触发。
+
 ### Freqtrade（方向性回测/执行）
 
 ```bash
@@ -159,7 +161,7 @@ trade-agents/
 ├── skills/trade-assistant/   分析大脑（唯一真相源）
 │   ├── SKILL.md              英文指令，三工具编排：/binance · Freqtrade · Hummingbot
 │   ├── references/           策略知识库（11 个英文文件，含三工具路由与引擎桥）
-│   └── scripts/              分析工具箱（14 个零依赖脚本，含 vector.mjs）
+│   └── scripts/              分析工具箱（零依赖：分析 · 引擎桥 · profile/envcheck · vector）
 ├── agents/
 │   ├── retrospective-writer      复盘/周报/月报文档生成 agent
 │   └── binance-orchestrator     binance 编排 agent（三工具路由，写操作交回 CONFIRM）

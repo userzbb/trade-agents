@@ -92,6 +92,17 @@ Routing rule of thumb: **analysis/manual** → /binance+cli; **validate a direct
 6. **Temp files**: analysis JSON → `%USERPROFILE%` (C:\tmp is unwritable in node); delete after use.
 7. **Strategy profile**: `strategy-profile.json` in `D:\trade\` holds the per-user risk image (equity/leverage/position style/risk tolerance). `solve.mjs` & `pyramid.mjs` read it for defaults; absent → reference defaults. Managed via `node <skill-root>/skills/trade-assistant/scripts/profile.mjs view|set`. The hard 8% daily stop and 25%/40% drawdown circuit-breakers can NOT be loosened via profile.
 
+## Environment Self-Check (once per session, on the first trade request)
+
+Run `node scripts/envcheck.mjs` **once per session** (on the first trade-related request, before heavy analysis). It is read-only and compares each plugin env var in **this session's process env** vs the **Windows user env (registry)** — the gap is why "hummingbot-mcp won't start": `.mcp.json` expands `${HUMMINGBOT_MCP_DIR}` from Claude Code's OWN process env at MCP launch.
+
+Protocol (respects the ABSOLUTE GATE — env writes are still a system change):
+1. Run it. **Exit 0** → reply one Chinese line (e.g. `环境 OK · HUMMINGBOT_MCP_DIR=…`), no full-table dump; do not re-run within the session.
+2. **Exit 2** (a required var missing / an MSYS `/x/...` path / non-Windows path) or a warning that needs action → show the Chinese table the script prints.
+3. Propose the exact `setx` lines (the script already prints them). This is a config write, not an (A)/(B) fund/engine action — but still **never run `setx` before the user approves** (typed `CONFIRM` or an explicit "设吧/改吧"). Never invent a value silently; if unsure where Hummingbot MCP lives, ask.
+4. After approval run the `setx` commands, then tell the user to **fully restart Claude Code** — a var set now does NOT reach the running session or its MCP servers.
+5. On demand triggers: "环境自检 / 修环境变量 / 为什么 hummingbot 连不上". Do NOT fall back to "just export in the shell" — a shell export can't reach a separately-launched Claude Code.
+
 ## /binance Ecosystem Dependency (strong dependency)
 
 This skill **strongly depends on the external `/binance` skill** (user-level, `npx skills add binance/binance-skills-hub` or `~/.claude/skills/binance`):
@@ -129,6 +140,7 @@ This skill **strongly depends on the external `/binance` skill** (user-level, `n
 | `summary.mjs weekly\|monthly` | 周报/月报 generator (auto md + archive) | Sundays / 1st; "周报/月报" |
 | `vector.mjs query "<text>" [--top N] [--filter review\|reference]` | local BM25 retrieval over retrospectives + strategy KB (no network) | 复盘相似案例; "找一下类似复盘" |
 | `engines.mjs` | three-engine status dashboard (Freqtrade/Hummingbot//binance) in one Chinese table | "看下三引擎状态/统一看板"; session start |
+| `envcheck.mjs` | **env self-check**: this-session process env vs Windows user env (registry); missing required `HUMMINGBOT_MCP_DIR` or an MSYS `/x/...` path → prints setx fix lines | **first trade request of a session**; "环境自检/修环境变量/为什么 hummingbot 连不上" |
 
 Known issue: `position.mjs` can hang on proxy jitter (>60s no output → kill it); fallback: `export HTTPS_PROXY=... HTTP_PROXY=...` then manually `binance-cli futures-usds account-information-v2` with 2–4 retries.
 
