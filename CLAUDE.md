@@ -1,6 +1,6 @@
 # CLAUDE.md — trade-agents
 
-Single installable Claude Code plugin for the Binance USDT-M perpetual futures system. Everything is bundled (skill + MCP + agents + BM25 vector search); the only external dependency is the `/binance` skill (binance-cli) and the `D:\trade` data layer.
+Single installable Claude Code plugin for the Binance USDT-M perpetual futures system. Everything is bundled (skill + agents + BM25 vector search); `.mcp.json` registers only the external `hummingbot-mcp` (uv) — no bundled Binance MCP server (reads via `scripts/`, writes via `binance-cli` + CONFIRM); the only external dependency is the `/binance` skill (binance-cli) and the `D:\trade` data layer.
 
 > For AI agents working in this repo. Read `docs/` for detailed human docs.
 
@@ -11,7 +11,7 @@ Single installable Claude Code plugin for the Binance USDT-M perpetual futures s
   - Strategy KB: `references/` — English KB `00-core-playbook` … `10-nfi-bridge` (`08/09/10` = Freqtrade/Hummingbot/NFI engine bridges; contains Chinese output templates)
   - Scripts: `scripts/` — zero-dep Node toolbox (analysis: scan/coin/ta/prob/solve/pyramid/position/sync/report/plan/summary · engines: engines/optimize/backtest · mgmt: profile/envcheck · search: vector · shared: db/_lib)
 - Agents: `agents/*.md` (`retrospective-writer`, `binance-orchestrator`)
-- MCP: `mcp/binance-mcp-server.mjs` + `.mcp.json`
+- MCP: `.mcp.json` — registers only the external `hummingbot-mcp` (uv); no bundled Binance MCP server
 - Docs: `docs/` — architecture · skill-guide · agents · vector-search · usage · development · conventions
 - Data layer: `D:\trade` (`TRADE_HOME`) — SQLite + retrospectives + plans
 - Mirror: `D:\claude-dev\skills\trade-assistant` (**deprecated, do not sync**)
@@ -31,7 +31,7 @@ Single installable Claude Code plugin for the Binance USDT-M perpetual futures s
 - **Change a strategy rule** → edit `references/<NN>-*.md` (English), update the SKILL.md references guide table if filenames change.
 - **Add a script** → `skills/trade-assistant/scripts/` (zero-dep, comments English, user output Chinese); add a row to the toolbox tables in SKILL.md + `docs/skill-guide.md` + `docs/usage.md`.
 - **Add an agent** → follow `plugin-dev:agent-development` skill conventions + `docs/conventions.md` §10; `agents/<kebab-name>.md` with frontmatter (`name`/`description`/`model: inherit`/`color`/`tools`) + a `When to invoke` section; validate with `validate-agent.sh`; update `docs/agents.md`.
-- **Edit the MCP server** → `mcp/binance-mcp-server.mjs`; keep `confirm: true` on every write tool.
+- **Manage MCP registration** → `.mcp.json` (external `hummingbot-mcp` only); do NOT add a bundled Binance MCP server — reads go through `scripts/`, writes through `binance-cli` + CONFIRM.
 - **Vector index** → `node skills/trade-assistant/scripts/vector.mjs index` (cache `D:/trade/vector-index.json`, gitignored).
 - **Release a user-facing change** → bump `version` in `.claude-plugin/plugin.json` (semver) BEFORE pushing, so marketplace `plugin update` pulls it. Without a version bump, external users' `claude plugin update` sees "already at latest" and never gets the new content.
 

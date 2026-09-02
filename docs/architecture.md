@@ -21,7 +21,7 @@
 ┌─ 能力层（本插件内）─────────────────────────────────────┐
 │  references/00-10  策略知识库 + 引擎桥接文档（唯一真相源） │
 │  scripts/          分析工具箱（分析/引擎桥/profile/vector）│
-│  mcp/binance-mcp-server  行情/账户 MCP（confirm:true）   │
+│  .mcp.json          外部 hummingbot-mcp（uv，仅引擎）      │
 └───────────────────┬───────────────────────────────────┘
                     ▼
 ┌─ 引擎层（外部部署的执行引擎，插件是控制面）───────────────┐
@@ -51,7 +51,7 @@
 | 自治 | binance-orchestrator agent | 选 binance skill/CLI、格式化调用、汇总 | 提示词英文 / 输出中文 |
 | 能力 | references/00-10 | 策略唯一真相源（S1-S6/进场模板/风控/庄家剧本/引擎桥/NFI） | 英文 |
 | 能力 | scripts/*.mjs | 分析工具箱 + 文档生成脚本 + vector.mjs | 注释英文 / 输出中文 |
-| 能力 | mcp/binance-mcp-server.mjs | 行情/账户 MCP + 下单(confirm:true) | JS |
+| 能力 | .mcp.json | MCP 注册：仅外部 hummingbot-mcp（uv）；读走 scripts、写走 binance-cli+CONFIRM | JSON |
 | 引擎 | Freqtrade | 方向性回测/Hyperopt/dry-run 执行（REST，插件=控制面） | — |
 | 引擎 | Hummingbot | 网格/做市/套利/三重屏障执行（MCP，插件=控制面） | — |
 | 引擎 | NFI（可选） | 现成趋势策略回测/交叉验证（独立 compose，REST 8989） | — |
@@ -84,5 +84,5 @@
 - skill 层唯一真相源 = `skills/trade-assistant/`（本插件内）。
 - 旧镜像 `D:\claude-dev\skills\trade-assistant` **已废弃**：不同步、不维护、不引用（CLAUDE.md 声明）。`npx skills add userzbb/trade-agents` 从本插件仓库直接装 skill。
 - 个人风险画像 `D:\trade\strategy-profile.json`（`TRADE_HOME` 下，`profile.mjs` 管理）覆盖 references 的数值默认（equity/杠杆/仓位/红线）；安全协议硬不可画像化。
-- 环境变量正确性：会话首个交易请求跑 `scripts/envcheck.mjs` 环境自检（当前进程 env vs Windows 用户环境），见 SKILL.md「Environment Self-Check」。
+- 环境/依赖/网络正确性：会话首个交易请求跑 `scripts/envcheck.mjs` 三层自检——默认本地 env+依赖（当前进程 env vs Windows 用户环境 + node/binance-cli/uv/docker 就绪），`--net` 追加网络联通（代理→fapi、引擎 REST）；触发词「网络联通/为什么连不上/交易前」。见 SKILL.md「Environment Self-Check」。
 - 任何策略规则或决策表变更：修改真相源 `skills/trade-assistant/` → 检查 agents/文档引用（无镜像可同步）。三处保持对齐：references ↔ agents 引用 ↔ 用户输出模板。

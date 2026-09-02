@@ -11,9 +11,9 @@ Claude Code 生态统一 **kebab-case**：全小写 + 连字符，字母数字�
 | 插件名（plugin.json name） | kebab-case | `trade-agents` |
 | Skill 名（SKILL.md name） | kebab-case | `trade-assistant` |
 | Agent 名（agents/*.md name） | kebab-case, 3–50 字符 | `retrospective-writer`, `binance-orchestrator` |
-| MCP server key（.mcp.json） | kebab-case | `binance-trade` |
+| MCP server key（.mcp.json，外部 MCP） | kebab-case | `hummingbot-mcp`（本项目不自带 Binance MCP server） |
 | reference 文件名 | `<NN>-<kebab-slug>.md`，NN 从 00 起 | `03-risk-and-position.md` |
-| 脚本名 | kebab-case + `.mjs` | `binance-mcp-server.mjs` |
+| 脚本名 | kebab-case + `.mjs` | `envcheck.mjs` |
 | marketplace 名 | 简短语义化 | `trade-marketplace` |
 | Git 仓库名 | 小写 + 连字符 | `trade-agents` |
 
@@ -84,7 +84,7 @@ docs/*.md             # 用户可读，中文
 
 - 不硬编码 API 密钥/私钥；用 `binance-cli profile create` 管理（profile `my-main`）。
 - 密钥走环境变量（`BINANCE_API_KEY/SECRET` 或 profile），不落库不落 md。
-- 写操作一律走 CONFIRM 协议，工具层强制 `confirm:true`。
+- 写操作一律走 CONFIRM 协议（binance-cli 手动执行 + hook 拦截；无自带 MCP 工具层）。
 - 不把敏感信息写进复盘/周报 md。
 
 ## 9. 架构文档规范（md 为真相源，不用可视化架构图）

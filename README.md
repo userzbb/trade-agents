@@ -1,8 +1,8 @@
 # trade-agents
 
-**单插件即全部功能** —— Binance U 本位永续合约交易系统的唯一安装入口。skill（分析大脑）+ MCP（行情/下单）+ agents（自治子任务）+ BM25 向量检索全部内置。**外部强依赖**：`/binance` skill（数据/执行）+ **Freqtrade**（方向性回测/执行）+ **Hummingbot**（网格/做市/套利）——后两个执行引擎为必需组件，部署见下文。
+**单插件即全部功能** —— Binance U 本位永续合约交易系统的唯一安装入口。skill（分析大脑）+ agents（自治子任务）+ BM25 向量检索全部内置；**无自带 Binance MCP server** —— 行情/账户读走 `scripts/` 分析工具箱，下单/账户写走 `/binance` binance-cli + CONFIRM，`.mcp.json` 只注册外部 `hummingbot-mcp`（引擎用）。**外部强依赖**：`/binance` skill（数据/执行）+ **Freqtrade**（方向性回测/执行）+ **Hummingbot**（网格/做市/套利）——后两个执行引擎为必需组件，部署见下文。
 
-> 前身是 `trade-plugin`（已退役），其 skill 与 MCP 已并入本插件。Skill 层为英文（效率优先），**所有给用户的输出为中文**。
+> 前身是 `trade-plugin`（已退役），其 skill 已并入本插件。Skill 层为英文（效率优先），**所有给用户的输出为中文**。
 
 ## 安装
 
@@ -17,7 +17,7 @@ npx skills add userzbb/trade-agents
 ```
 
 ```bash
-# 推荐：经 GitHub marketplace（完整插件：skill + MCP + agents + 引擎桥）
+# 推荐：经 GitHub marketplace（完整插件：skill + agents + 引擎桥 + 外部 MCP 注册）
 claude plugin marketplace add https://github.com/userzbb/trade-agents
 claude plugin install trade-agents
 ```
@@ -59,14 +59,14 @@ export BINANCE_PROXY=http://127.0.0.1:7897
 | ⑤ 安装插件 | `claude plugin marketplace add …` + `install`（或本地 `--plugin-dir`） | [安装](#安装) |
 | ⑥ 验证 | `curl 8080/api/v1/ping`、Hummingbot MCP initialize、`claude mcp list` 见 `hummingbot-mcp` | 各引擎小节 |
 
-> 插件 `.mcp.json` 已注册 `binance-trade` + `hummingbot-mcp` 两个 MCP server；Freqtrade 走 REST（`binance-orchestrator` 路由调用）。引擎未部署时相关能力不可用，但插件其余部分（分析/复盘/manual）照常。
+> 插件 `.mcp.json` 只注册外部 `hummingbot-mcp`（Hummingbot 引擎官方 MCP）；Binance 行情/账户读走 `scripts/` 工具箱、下单/账户写走 `/binance` binance-cli + CONFIRM，Freqtrade 走 REST（`binance-orchestrator` 路由调用）。引擎未部署时相关能力不可用，但插件其余部分（分析/复盘/manual）照常。
 
 ## 依赖与环境要求
 
 | 依赖 | 版本 / 来源 | 作用 | 安装方式 |
 |---|---|---|---|
-| Node.js | ≥ 26（脚本依赖内置 `node:sqlite`） | 所有 scripts + MCP server 的运行时 | 官网 installer，或 `winget install OpenJS.NodeJS.LTS` / nvm-windows |
-| curl | Windows 10 1803+ 自带（`System32\curl.exe`） | 脚本/MCP 访问 `fapi.binance.com` | 无需安装（系统自带） |
+| Node.js | ≥ 26（脚本依赖内置 `node:sqlite`） | 所有 scripts / 引擎桥脚本的运行时（无自带 MCP server） | 官网 installer，或 `winget install OpenJS.NodeJS.LTS` / nvm-windows |
+| curl | Windows 10 1803+ 自带（`System32\curl.exe`） | 脚本访问 `fapi.binance.com`（含 envcheck --net 网络自检） | 无需安装（系统自带） |
 | /binance skill | 最新 | **强依赖**：数据/执行层（binance-cli 端点字典、认证规则） | `npx skills add binance/binance-skills-hub` |
 | binance-cli | npm v1.3.0（**仅 Windows npm 版**，官方安装脚本不兼容 Windows） | 签名账户查询 / 下单执行 | `npm install -g @binance/binance-cli` |
 | Binance API 密钥 | profile `my-main` | 签名请求鉴权（只在 `binance-cli` 里配置，勿写进代码） | `binance-cli profile create` → 填 API Key / Secret |
@@ -108,7 +108,7 @@ setx HUMMINGBOT_API_PASSWORD "hb_p1_paper_2026"
 > - PowerShell：`$env:HUMMINGBOT_MCP_DIR = 'E:\trade-bots\hummingbot\mcp'`（其余类推）
 > - Git Bash：`export HUMMINGBOT_MCP_DIR=/e/trade-bots/hummingbot/mcp` —— `/e/` 是 Git Bash 对 `E:\` 的 MSYS 写法，**PowerShell/cmd 无效**（会被当成相对路径）。
 
-> **首次调用 skill 会自动跑一次环境自检**（`scripts/envcheck.mjs`，只读）：对照「当前进程 env」与「Windows 用户环境」，发现 `HUMMINGBOT_MCP_DIR` 缺失/MSYS 路径等问题时，agent 会展示 setx 方案、等你 CONFIRM 后才执行；改完需**完全重启 Claude Code** 生效（`.mcp.json`/MCP 在启动时读环境）。也可直接说「环境自检」/「修环境变量」手动触发。
+> **首次调用 skill 会自动跑一次环境自检**（`scripts/envcheck.mjs`，只读）。默认本地自检 = **环境变量 + 依赖**（对照「当前进程 env」与「Windows 用户环境」，并探测 node / binance-cli / uv / docker / `/binance` skill 是否就绪）；加 `--net` 再追加**网络联通自检**（代理 `127.0.0.1:7897` → `fapi.binance.com`，Freqtrade / Hummingbot / NFI 引擎 REST）。发现 `HUMMINGBOT_MCP_DIR` 缺失 / MSYS 路径 / 依赖缺失等问题时，agent 会展示 setx 或安装方案、等你 CONFIRM 后才执行；改完需**完全重启 Claude Code** 生效（`.mcp.json`/MCP 在启动时读环境）。说「环境自检」/「修环境变量」触发默认自检；说「**网络联通** / 为什么连不上 / 交易前」触发 `envcheck.mjs --net`。
 
 ### Freqtrade（方向性回测/执行）
 
@@ -165,8 +165,7 @@ trade-agents/
 ├── agents/
 │   ├── retrospective-writer      复盘/周报/月报文档生成 agent
 │   └── binance-orchestrator     binance 编排 agent（三工具路由，写操作交回 CONFIRM）
-└── mcp/
-    └── binance-mcp-server    行情/账户 MCP + 下单（confirm:true）
+└── .mcp.json                     MCP 注册：仅外部 hummingbot-mcp（uv，引擎用）
 ```
 
 ## 📚 文档

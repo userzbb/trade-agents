@@ -22,7 +22,6 @@ trade-agents/
 │   └── nfi-deployment.md    # NFI 引擎部署（可选）
 ├── agents/*.md              # agent 定义（retrospective-writer · binance-orchestrator）
 ├── hooks/block-trading-commands.mjs   # PreToolUse 安全门（拦截引擎/资金写命令）
-├── mcp/binance-mcp-server.mjs         # 行情/账户 MCP server（写工具 confirm:true）
 ├── skills/trade-assistant/   # ★ skill 层（唯一真相源）
 │   ├── SKILL.md             # 英文指令 + 三工具编排 + ABSOLUTE GATE + 环境自检
 │   ├── references/          # 策略知识库 00-10（08/09/10 = Freqtrade/Hummingbot/NFI 引擎桥）
@@ -31,7 +30,7 @@ trade-agents/
 └── tests/                   # node:test 单测（tests/*.test.mjs）
 ```
 
-> 已废弃（不维护、不引用、勿重新引入）：独立分发镜像 `D:\claude-dev\skills\trade-assistant`；archify 可视化架构图（HTML/spec，2026-09-02 删除）。
+> 已废弃（不维护、不引用、勿重新引入）：独立分发镜像 `D:\claude-dev\skills\trade-assistant`；archify 可视化架构图（HTML/spec，2026-09-02 删除）；自带 Binance 行情/账户 MCP server（2026-09-02 退役，勿重新引入）。
 
 ## 如何扩展
 
@@ -52,9 +51,9 @@ trade-agents/
 3. 校验 `bash <plugin-dev>/skills/agent-development/scripts/validate-agent.sh agents/<name>.md`。
 4. 在 docs/agents.md 与 README 组件树补充。
 
-### 修改 MCP server
-- 编辑 `mcp/binance-mcp-server.mjs`；`.mcp.json` 通常无需改。
-- 写工具必须 `confirm: true`；`.mcp.json` 引用的环境变量（`HUMMINGBOT_MCP_DIR` 等）变更时同步 README「环境变量」节。
+### MCP 注册（.mcp.json）
+- `.mcp.json` 只注册外部 `hummingbot-mcp`（uv/stdio）；**不要新增自带 Binance MCP server** —— 读走 `scripts/`、写走 `binance-cli` + CONFIRM（见 conventions / architecture）。
+- `.mcp.json` 引用的环境变量（`HUMMINGBOT_MCP_DIR` 等）变更时同步 README「环境变量」节。
 
 ## 测试
 
@@ -63,13 +62,15 @@ trade-agents/
 node --test tests/*.test.mjs
 
 # JS 语法
-for f in skills/trade-assistant/scripts/*.mjs mcp/*.mjs; do node --check "$f"; done
+for f in skills/trade-assistant/scripts/*.mjs; do node --check "$f"; done
 
 # 插件清单 JSON
 node -e "JSON.parse(require('fs').readFileSync('.claude-plugin/plugin.json'))"
 
-# 环境自检（本机真实环境，只读）
+# 环境/依赖自检（本机真实环境，只读；默认本地 env+依赖）
 node skills/trade-assistant/scripts/envcheck.mjs
+# 追加网络联通自检（代理→fapi + 引擎 REST）
+node skills/trade-assistant/scripts/envcheck.mjs --net
 
 # 向量检索（真实数据）
 node skills/trade-assistant/scripts/vector.mjs index
