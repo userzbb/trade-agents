@@ -5,7 +5,7 @@ description: 币安 U 本位永续合约交易助手（D:\trade 项目），强�
 
 # Trade Assistant — D:\trade project
 
-**Strategy knowledge base lives in `references/`** (relative to this file: `references/00-core-playbook.md` … `07-trade-log-and-review-template.md`) — the single source of truth. `binance-cli` / fapi API is the execution tool. Your job: analyze per the docs, execute per the protocol, generate documents per the lifecycle.
+**Strategy knowledge base lives in `references/`** (relative to this file: `references/00-core-playbook.md` … `10-nfi-bridge.md`) — the single source of truth. `binance-cli` / fapi API is the execution tool. Your job: analyze per the docs, execute per the protocol, generate documents per the lifecycle.
 
 > **Language rule: all user-facing output — conversation tables, 复盘/周报/月报/计划 document bodies, summaries, error messages — MUST be in Chinese.** This file, references, and scripts are in English for the LLM's efficiency.
 
@@ -163,6 +163,7 @@ Rule of thumb + signal mapping in `references/00-core-playbook.md` §Three-Tool 
 | `07-trade-log-and-review-template.md` | logging; generating 复盘 md after full close |
 | `08-freqtrade-bridge.md` | Freqtrade REST/backtest/Hyperopt, signal injection, CONFIRM scope; "回测这个策略/跑 Freqtrade" |
 | `09-hummingbot-bridge.md` | Hummingbot MCP tools, controller mapping, paper trade; "帮我部署个网格/查 bot 状态" |
+| `10-nfi-bridge.md` | NFI ready-made trend engine — independent deploy, backtest, decision mapping; "用 NFI 回测/跑现成策略" |
 
 ## Output Language
 

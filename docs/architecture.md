@@ -19,7 +19,7 @@
 └───────────────────┬───────────────────────────────────┘
                     ▼
 ┌─ 能力层（本插件内）─────────────────────────────────────┐
-│  references/00-09  策略知识库 + 引擎桥接文档（唯一真相源） │
+│  references/00-10  策略知识库 + 引擎桥接文档（唯一真相源） │
 │  scripts/          分析工具箱（14 个零依赖脚本）           │
 │  mcp/binance-mcp-server  行情/账户 MCP（confirm:true）   │
 └───────────────────┬───────────────────────────────────┘
@@ -29,7 +29,9 @@
 │    方向性回测/Hyperopt/执行 · REST 127.0.0.1:8080        │
 │  Hummingbot E:\trade-bots\hummingbot（API+MCP）         │
 │    网格/做市/套利/三重屏障 · MCP 8000                    │
-│  两者各自独立币安子账户；策略级操作走 CONFIRM             │
+│  NFI(可选) E:\trade-bots\nfi（独立 compose）            │
+│    现成趋势策略 · 币安合约/做空 · REST 8989              │
+│  各自独立币安子账户；策略级操作走 CONFIRM                │
 └───────────────────┬───────────────────────────────────┘
                     ▼
 ┌─ 数据/执行层（外部强依赖 + 本地数据层）──────────────────┐
@@ -47,11 +49,12 @@
 | 交互 | trade-assistant skill | 用户入口、CONFIRM、文档编排、binance 决策 | 指令英文 / 输出中文 |
 | 自治 | retrospective-writer agent | 复盘/周报/月报 md 生成 + 相似案例检索 | 提示词英文 / 输出中文 |
 | 自治 | binance-orchestrator agent | 选 binance skill/CLI、格式化调用、汇总 | 提示词英文 / 输出中文 |
-| 能力 | references/00-07 | 策略唯一真相源（S1-S6/进场模板/风控/庄家剧本） | 英文 |
+| 能力 | references/00-10 | 策略唯一真相源（S1-S6/进场模板/风控/庄家剧本/引擎桥/NFI） | 英文 |
 | 能力 | scripts/*.mjs | 分析工具箱 + 文档生成脚本 + vector.mjs | 注释英文 / 输出中文 |
 | 能力 | mcp/binance-mcp-server.mjs | 行情/账户 MCP + 下单(confirm:true) | JS |
 | 引擎 | Freqtrade | 方向性回测/Hyperopt/dry-run 执行（REST，插件=控制面） | — |
 | 引擎 | Hummingbot | 网格/做市/套利/三重屏障执行（MCP，插件=控制面） | — |
+| 引擎 | NFI（可选） | 现成趋势策略回测/交叉验证（独立 compose，REST 8989） | — |
 | 数据 | /binance 生态 | 行情/费率/信号/情绪/链上数据与执行 | — |
 | 数据 | D:\trade | SQLite + md 归档（用户数据） | 中文文档 |
 

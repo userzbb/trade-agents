@@ -66,6 +66,7 @@ export BINANCE_PROXY=http://127.0.0.1:7897
 | Python ≥3.11 + uv | — | Hummingbot MCP server 运行环境 | `uv` 官方安装器 |
 | **Freqtrade**（必需·强依赖） | [freqtrade/freqtrade](https://github.com/freqtrade/freqtrade) · `E:\trade-bots\freqtrade` | 方向性回测/Hyperopt/执行（REST `127.0.0.1:8080`） | 见 [Freqtrade 部署](#freqtrade方向性回测执行) |
 | **Hummingbot**（必需·强依赖） | [hummingbot/hummingbot](https://github.com/hummingbot/hummingbot) · [hummingbot/mcp](https://github.com/hummingbot/mcp) · `E:\trade-bots\hummingbot` | 网格/做市/套利执行（API `8000` + MCP） | 见 [Hummingbot 部署](#hummingbot网格做市套利执行) |
+| **NFI（可选·推荐）** | [iterativv/NostalgiaForInfinity](https://github.com/iterativv/NostalgiaForInfinity) · `E:\trade-bots\nfi` | 现成高星趋势策略（币安合约/做空，回测与交叉验证） | 见 [NFI 部署](#nfi可选·推荐现成趋势策略引擎) |
 
 **向量检索（`vector.mjs`）零外部依赖**：不是外部向量数据库，是本地 BM25 检索（中文字符 bigram 分词 + 倒排索引），纯 Node 实现。**无需安装任何数据库、无需 API key、无需外部模型**；索引自动构建到 `${TRADE_HOME}/vector-index.json`（`D:/trade/vector-index.json`），源文件变化时自动重建。详见 [向量检索](docs/vector-search.md)。
 
@@ -115,13 +116,27 @@ P1 用 `binance_perpetual_paper_trade` 模拟盘（零 key）；实盘需 `hbot 
 
 > **账户隔离**：Freqtrade / Hummingbot / binance-cli（`my-main`）各用独立币安子账户，勿共用 key。策略级部署/启停需 CONFIRM；回测/查询只读免。
 
+### NFI（可选·推荐）现成趋势策略引擎
+
+NFI 是**可选·推荐**的现成高星趋势策略（非必需）：需要"久经实战的趋势策略回测/交叉验证/全市场扫描"时用它，与现有引擎**独立部署并存**（官方 docker-compose，默认 API 端口 8989，不占 8080）。**零自研策略代码**。
+
+```bash
+cd /e/trade-bots
+git clone https://github.com/iterativv/NostalgiaForInfinity.git nfi && cd nfi
+cp live-account-example.env .env        # 配独立币安子账户 key + API 凭据；DRY_RUN=true
+docker compose up -d --build            # 官方 compose，默认策略 NostalgiaForInfinityX7 / futures / 5m
+curl -s http://127.0.0.1:8989/api/v1/ping
+```
+
+详见 [`docs/nfi-deployment.md`](docs/nfi-deployment.md) 与 `references/10-nfi-bridge.md`。
+
 ## 组件
 
 ```
 trade-agents/
 ├── skills/trade-assistant/   分析大脑（唯一真相源）
 │   ├── SKILL.md              英文指令，三工具编排：/binance · Freqtrade · Hummingbot
-│   ├── references/           策略知识库（10 个英文文件，含三工具路由与引擎桥）
+│   ├── references/           策略知识库（11 个英文文件，含三工具路由与引擎桥）
 │   └── scripts/              分析工具箱（14 个零依赖脚本，含 vector.mjs）
 ├── agents/
 │   ├── retrospective-writer      复盘/周报/月报文档生成 agent
@@ -140,6 +155,7 @@ trade-agents/
 | [向量检索](docs/vector-search.md) | vector.mjs 用法、BM25 原理、命令示例 |
 | [使用场景速查](docs/usage.md) | 你说什么 → 触发什么 → 得到什么 |
 | [开发文档](docs/development.md) | 项目结构、如何扩展、测试、git 工作流 |
+| [NFI 部署](docs/nfi-deployment.md) | NFI 现成趋势策略引擎的独立部署与回测流程（可选） |
 | [规范](docs/conventions.md) | 命名、语言边界、frontmatter、防漂移、安全 |
 
 ## 语言边界（硬规则）

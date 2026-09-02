@@ -77,21 +77,19 @@ Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for 
 | Technical indicators (RSI/MACD/EMA/BOLL/ATR/divergence/patterns) | trade-assistant toolbox | `node <skill-root>/skills/trade-assistant/scripts/ta.mjs <SYM> [--interval 1h]` |
 | Market scan / coin checkup / probability / stop-TP solver / pyramid | trade-assistant toolbox | `node <skill-root>/skills/trade-assistant/scripts/scan.mjs` / `coin.mjs` / `prob.mjs` / `solve.mjs` / `pyramid.mjs` |
 | **方向性策略回测/Hyperopt/执行** | Freqtrade | read SKILL.md → Engines Bridge + `references/08`; backtest/Hyperopt/status/balance are read-only (no CONFIRM); deploy/start/stop/force-entry need CONFIRM; REST `http://127.0.0.1:8080` (URL overridable via env) |
+| **现成趋势策略回测/交叉验证（NFI，可选）** | NFI (independent deploy) | read `references/10` + `docs/nfi-deployment.md`; if NFI not deployed, say optional & unavailable (degrade to Freqtrade/manual); backtest/status read-only (no CONFIRM); start/go-live need CONFIRM |
 | **网格/做市/套利/三重屏障执行** | Hummingbot | read SKILL.md → Engines Bridge + `references/09`; query bot status/PnL via `hummingbot-mcp` tools (no CONFIRM); deploy/start/stop bots need CONFIRM |
-| **SMC/缠论 结构信号（趋势/震荡判定）** | trade-assistant (refs 10/11 + `smc-signal.mjs`) | **if deployed**: `node <skill-root>/skills/trade-assistant/scripts/smc-signal.mjs <SYM>` reads Freqtrade `analyzed_df` → **Chinese structure read** — 三买/三卖 + BOS + FVG/OB retest ⇒ trend; 中枢 + liquidity sweep without CHoCH ⇒ range; conflict ⇒ downgrade. Read-only, no CONFIRM. **if NOT deployed**: degrade to `ta.mjs` + refs `01`/`06` trend-vs-range judgment and state "SMC/CZSC structure bridge pending" — never fabricate structure signals |
-| **结构共振 → 引擎路由建议** | LLM judgment (this agent) | combine the structure signal with S1–S6 → recommend **Freqtrade** for trend or **Hummingbot** for range (per ref 00 Three-Tool Decision Framework). **Write ops still route to trade-assistant CONFIRM — never auto-execute** |
 
 `TRADE_PLUGIN_ROOT` / `TRADE_HOME` / `CRYPTO_MARKET_RANK_CLI` are overridable via env — Path Resolution always prefers them. `HUMMINGBOT_MCP_DIR` locates the Hummingbot MCP repo; Freqtrade API URL defaults to `http://127.0.0.1:8080`.
 
 ## Process
 
 1. Classify the user's intent into one decision-table row.
-2. For SMC/缠论 structure queries, first check whether `references/10-smc-bridge.md`, `references/11-czsc-bridge.md`, and `scripts/smc-signal.mjs` exist; **if missing, degrade** to the toolbox `ta.mjs` trend/range read and say the structure bridge is pending — never invent a signal source.
-3. For skill-backed rows, first Read that skill's `SKILL.md` / references for exact syntax.
-4. Execute via Bash **serially**, `sleep 2-4` between calls.
-5. On rate-limit or clock-drift, apply the wait-and-retry rules above.
-6. Summarize in a Chinese table annotated with the source provider.
-7. **Write intent** → stop: show the plan, route to the trade-assistant CONFIRM protocol; do not execute.
+2. For skill-backed rows, first Read that skill's `SKILL.md` / references for exact syntax.
+3. Execute via Bash **serially**, `sleep 2-4` between calls.
+4. On rate-limit or clock-drift, apply the wait-and-retry rules above.
+5. Summarize in a Chinese table annotated with the source provider.
+6. **Write intent** → stop: show the plan, route to the trade-assistant CONFIRM protocol; do not execute.
 
 ## Quality Standards
 
@@ -102,7 +100,7 @@ Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for 
 ## Edge Cases
 
 - Capability not in the table → Read `/binance` references, or ask the user.
-- SMC/CZSC structure bridge not deployed → degrade to `ta.mjs` + refs 01/06, state "SMC/CZSC structure bridge pending"; do not fake structure signals.
+- Optional tool not deployed (e.g. NFI) → say it's optional & unavailable; degrade to Freqtrade/manual — do not fake results.
 - Proxy down → report it; do not fake data.
 - Query vs write → never execute writes; always route to CONFIRM.
 - Illiquid / unknown symbol → confirm the symbol with the user first.
@@ -113,4 +111,4 @@ Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for 
 - **Signal query.** User says "XX 有没有信号 / 能不能买 / 回测一下这个策略" — use binance-trading-signal.
 - **Information-face.** User says "最近什么火 / 聪明钱在买什么 / 谁是这周最赚的交易员" — use crypto-market-rank (+ wallet-tracker for behavior).
 - **Behavior/TA.** User says "看看 XX 是吸筹还是派发" or "XX 的技术面 / 指标" — wallet-tracker for behavior, ta.mjs for indicators.
-- **Structure analysis (SMC/CZSC).** User says "XX 什么结构 / 现在是趋势还是震荡 / 该追单还是做网格" — read the structure signal via `smc-signal.mjs` (if deployed; else degrade to `ta.mjs` + refs 01/06), output a Chinese trend-vs-range read with a routing recommendation (Freqtrade vs Hummingbot), and route any write intent to CONFIRM.
+- **Ready-made strategy (NFI).** User says "用 NFI 回测下 XX / 跑个现成的趋势策略" — read `references/10` + `docs/nfi-deployment.md`; run backtest/status (read-only) and report in Chinese; if NFI not deployed, say optional & unavailable.
