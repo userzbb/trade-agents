@@ -116,6 +116,73 @@ export function upsertClassSnapshot(symbol, cls, volM, amp) {
   writeFileSync(CLASS_FILE, JSON.stringify(snap, null, 1));
 }
 
+export const PROFILE_FILE = `${DATA_ROOT}/strategy-profile.json`;
+
+export const STRATEGY_DEFAULTS = Object.freeze({
+  schema: 1,
+  equity: 336,
+  leverage: 20,
+  positionStyle: Object.freeze({ mainPct: 0.80, lotteryPct: 0.20, mainNormalPct: 0.25, lotteryPerTradePct: 0.05 }),
+  risk: Object.freeze({ perTradeCapPct: 0.06, dailyCircuitBreakerPct: 0.08 }),
+});
+
+/** Read strategy-profile.json; null on any failure (mirrors readClassSnapshot). */
+export function readStrategyProfile() {
+  try {
+    return JSON.parse(readFileSync(PROFILE_FILE, 'utf8'));
+  } catch { return null; }
+}
+
+/**
+ * Reference defaults overlaid with the on-disk profile.
+ * dailyCircuitBreakerPct is CLAMPED to ≤0.08 (hard 8% daily stop can't be loosened).
+ * Never returns null. `_applied` is true when a file exists and is non-empty.
+ */
+export function strategyProfile() {
+  const f = readStrategyProfile();
+  const d = STRATEGY_DEFAULTS;
+  const prof = {
+    schema: (f?.schema ?? d.schema),
+    equity: (f?.equity ?? d.equity),
+    leverage: (f?.leverage ?? d.leverage),
+    positionStyle: { ...d.positionStyle, ...(f?.positionStyle ?? {}) },
+    risk: { ...d.risk, ...(f?.risk ?? {}) },
+    _applied: !!(f && Object.keys(f).length > 0),
+  };
+  prof.risk.dailyCircuitBreakerPct = Math.min(prof.risk.dailyCircuitBreakerPct, 0.08);
+  return prof;
+}
+
+/** Validate a candidate profile. Returns { errs:[Chinese...], warns:[Chinese...] }. Errors reject the write. */
+export function validateStrategyProfile(v) {
+  const errs = [], warns = [];
+  if (!Number.isFinite(v.equity) || v.equity <= 0) errs.push('权益必须为正数');
+  if (!Number.isInteger(v.leverage) || v.leverage < 1 || v.leverage > 125) errs.push('杠杆须为 1–125 整数');
+  for (const [k, val] of Object.entries(v.positionStyle)) {
+    if (!Number.isFinite(val) || val <= 0) errs.push(`仓位 ${k} 须为正数`);
+  }
+  if (v.positionStyle.mainPct + v.positionStyle.lotteryPct < 0.9) warns.push('主+彩票分配合计 < 90%');
+  if (v.risk.perTradeCapPct > 0.06) warns.push('单笔红线高于参考默认 6%，计划中必须标注');
+  if (v.risk.dailyCircuitBreakerPct > 0.08) errs.push('单日熔断不可放宽超过硬性 8%');
+  return { errs, warns };
+}
+
+/** Merge-write strategy-profile.json (schema/updatedAt auto). Mirrors upsertClassSnapshot write style. */
+export function writeStrategyProfile(profile) {
+  const prev = readStrategyProfile() ?? {};
+  const merged = {
+    ...prev,
+    ...profile,
+    schema: 1,
+    updatedAt: new Date().toISOString(),
+    positionStyle: { ...STRATEGY_DEFAULTS.positionStyle, ...(prev.positionStyle ?? {}), ...(profile.positionStyle ?? {}) },
+    risk: { ...STRATEGY_DEFAULTS.risk, ...(prev.risk ?? {}), ...(profile.risk ?? {}) },
+  };
+  delete merged._applied;
+  mkdirSync(dirname(PROFILE_FILE), { recursive: true });
+  writeFileSync(PROFILE_FILE, JSON.stringify(merged, null, 1));
+}
+
 /** 执行 binance-cli（带代理env与重试；防挂起用 timeout） */
 export function cliBin(cmd, { retries = 3 } = {}) {
   const env = { ...process.env, HTTPS_PROXY: PROXY, HTTP_PROXY: PROXY };
