@@ -72,12 +72,14 @@ $env:BINANCE_PROXY = "http://127.0.0.1:7897"
 
 ## 依赖与环境要求
 
+> 平台支持：Windows 11 实测；macOS/Linux 架构上支持（Node+Docker+TRADE_HOME），未逐一实测。
+
 | 依赖 | 版本 / 来源 | 作用 | 安装方式 |
 |---|---|---|---|
 | Node.js | ≥ 26（脚本依赖内置 `node:sqlite`） | 所有 scripts / 引擎桥脚本的运行时（无自带 MCP server） | 官网 installer，或 `winget install OpenJS.NodeJS.LTS` / nvm-windows |
 | curl | Windows 10 1803+ 自带（`System32\curl.exe`） | 脚本访问 `fapi.binance.com`（含 envcheck --net 网络自检） | 无需安装（系统自带） |
 | /binance skill | 最新 | **强依赖**：数据/执行层（binance-cli 端点字典、认证规则） | `npx skills add binance/binance-skills-hub` |
-| binance-cli | npm v1.3.0（**仅 Windows npm 版**，官方安装脚本不兼容 Windows） | 签名账户查询 / 下单执行 | `npm install -g @binance/binance-cli` |
+| binance-cli | npm v1.3.0 | 签名账户查询 / 下单执行 | **Windows**：`npm i -g @binance/binance-cli`（npm v1.3.0；官方安装脚本不兼容 Windows）· **macOS/Linux**：走 `/binance` skill 官方安装器（binance-cli v2） |
 | Binance API 密钥 | profile `my-main` | 签名请求鉴权（只在 `binance-cli` 里配置，勿写进代码） | `binance-cli profile create` → 填 API Key / Secret |
 | 本地代理 | `127.0.0.1:7897`（Clash 等） | 直连币安被墙时走代理 | `setx BINANCE_PROXY "http://127.0.0.1:7897"`（binance-cli 的代理由 agent 调用时自动内联，见上） |
 | 数据层 | `D:\trade`（可覆盖） | SQLite（`data/trade.db`）+ 复盘归档（`retrospectives/`）+ 个人策略覆盖 `strategy-overrides.md` | `setx TRADE_HOME "D:\trade"`（目录可自动创建） |
@@ -124,6 +126,7 @@ setx HUMMINGBOT_API_PASSWORD "hb_p1_paper_2026"
 ### Freqtrade（方向性回测/执行）
 
 ```powershell
+# 引擎根：Windows E:\trade-bots（本示例）· Git Bash /e/trade-bots · macOS/Linux ~/trade-bots
 # Docker（dry-run，api_server 8080）
 cd E:\trade-bots\freqtrade; docker compose up -d
 # 下载数据 + 回测（PowerShell 无 Git Bash 的路径改写问题）
@@ -136,6 +139,7 @@ curl.exe -s http://127.0.0.1:8080/api/v1/ping   # {"status":"pong"}
 ### Hummingbot（网格/做市/套利执行）
 
 ```powershell
+# 引擎根：Windows E:\trade-bots（本示例）· Git Bash /e/trade-bots · macOS/Linux ~/trade-bots
 # API server（Docker，8000）+ MCP（uv）
 cd E:\trade-bots\hummingbot\hummingbot-api; docker compose up -d
 cd E:\trade-bots\hummingbot\mcp; uv sync; Copy-Item .env.example .env   # 填 API 凭据
@@ -153,6 +157,7 @@ NFI 是**可选·推荐**的现成高星趋势策略（非必需），定位 = *
 > ⚠️ NFI（X7）是**全市场选币**策略（40-80 pairs 设计），**不做单币局部出单验证**（单币短期 0 单是正常现象，非故障）——启用时机由 LLM 研判/交叉验证决定。
 
 ```powershell
+# 引擎根：Windows E:\trade-bots（本示例）· Git Bash /e/trade-bots · macOS/Linux ~/trade-bots
 # 官方仓库 + 文档
 #   repo: https://github.com/iterativv/NostalgiaForInfinity
 #   docs: https://iterativv.github.io/NostalgiaForInfinity/

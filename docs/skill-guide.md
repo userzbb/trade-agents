@@ -60,7 +60,7 @@
 | `db.mjs` | SQLite 封装（node:sqlite） | 被其他脚本 import | — |
 | `_lib.mjs` | 共享：代理请求/重试/限流 + 动态分级 classify() | 被其他脚本 import | — |
 | `engines.mjs` | 三引擎统一看板（Freqtrade/Hummingbot/binance 持仓+盈亏） | `node engines.mjs` | "看三引擎状态/统一看板"；会话开始 |
-| `envcheck.mjs` | 环境自检：当前进程 env vs Windows 用户环境(注册表) + 依赖就绪；缺 `HUMMINGBOT_MCP_DIR` 或 MSYS `/x/` 路径 → 给 setx 方案 | `node envcheck.mjs`（默认 env+依赖，本地）；`node envcheck.mjs --net`（追加网络联通：代理→fapi + Freqtrade/Hummingbot/NFI REST） | 每次会话首个交易请求自动跑一次（本地）；"网络联通/为什么连不上/交易前" 或代理/引擎问题 → `--net`；"环境自检/修环境变量" |
+| `envcheck.mjs` | **运行环境检测**（OS/arch/shell，注册表可读性）+ 环境自检：当前进程 env vs Windows 用户环境(注册表) + 依赖就绪；缺 `HUMMINGBOT_MCP_DIR` 或 MSYS `/x/` 路径 → 给 setx 方案 | `node envcheck.mjs`（默认 env+依赖，本地）；`node envcheck.mjs --net`（追加网络联通：代理→fapi + Freqtrade/Hummingbot/NFI REST） | 每次会话首个交易请求自动跑一次（本地）；"网络联通/为什么连不上/交易前" 或代理/引擎问题 → `--net`；"环境自检/修环境变量" |
 | `profile.mjs view\|set\|clear` | 个人风险画像读写（strategy-profile.json） | `node profile.mjs set --equity 600` | 首次采参/风险风格变更 |
 | `overrides.mjs seed\|view` | 个人策略覆盖文件：把随插件模板幂等首建到 `D:\trade\strategy-overrides.md`（已存在不覆盖，保留你的编辑），或查看当前覆盖 | `node overrides.mjs seed` / `node overrides.mjs view` | 首次个性化；「改一下我的策略/规则」——覆盖优先于 references，计划会标注「应用覆盖」 |
 

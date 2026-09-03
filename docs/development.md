@@ -67,7 +67,7 @@ for f in skills/trade-assistant/scripts/*.mjs; do node --check "$f"; done
 # 插件清单 JSON
 node -e "JSON.parse(require('fs').readFileSync('.claude-plugin/plugin.json'))"
 
-# 环境/依赖自检（本机真实环境，只读；默认本地 env+依赖）
+# 环境/依赖自检（先报运行环境 OS/shell；本机真实环境，只读；默认本地 env+依赖）
 node skills/trade-assistant/scripts/envcheck.mjs
 # 追加网络联通自检（代理→fapi + 引擎 REST）
 node skills/trade-assistant/scripts/envcheck.mjs --net
