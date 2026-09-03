@@ -68,7 +68,7 @@ Rules:
    only when the user wants personalization; do not create it unprompted.
 2. **Edit flow = dialogue.** User states a change ("S3 加成交额≥2亿过滤", "BTR
    第4幕不做多") → agent edits the md under that explicit user choice → `git -C
-   ${TRADE_HOME} add strategy-overrides.md` + `commit -m "策略覆盖更新: …"`.
+   ${TRADE_HOME} add strategy-overrides.md`, then `git -C ${TRADE_HOME} commit -m "策略覆盖更新: …"`.
    Not an (A)/(B) action → no typed CONFIRM, but NEVER change it silently or
    invent rules; show what you will write.
 3. **Plan annotation (mandatory).** Any 交易计划/回测计划/执行方案 whose inputs
@@ -104,7 +104,7 @@ Routing rule of thumb: **analysis/manual** → /binance+cli; **validate a direct
 | **Executing** | no file. After close, `sync.mjs` ingests flows into SQLite (`data/trade.db`) | — |
 | **Fully closed** | **复盘 md (mandatory)**: pull that position's orders/flows, generate per `references/07-trade-log-and-review-template.md` | `D:\trade\retrospectives\复盘_起始日期-结束日期_币种.md` |
 | **Archive** | after generating 复盘 → `git add + commit` (msg: `复盘 ARB 20260901-0902 +36.7U`) | git |
-| **Strategy change** | edit the relevant `references/` doc directly, commit what/why | git |
+| **Strategy change** | shared-KB baseline → edit the relevant `references/` doc (versioned); personal preference → `${TRADE_HOME}/strategy-overrides.md` | git |
 | **周报** | **Sundays** (or user says 周报): run `node scripts/summary.mjs weekly`, analyze win rate / drawdown / tier attribution | `D:\trade\retrospectives\周报_YYYYMMDD_YYYYMMDD.md` → git |
 | **月报** | **1st of month** (or user says 月报): `node scripts/summary.mjs monthly` + `plan.mjs` validates next targets | `D:\trade\retrospectives\月报_YYYY-MM.md` → git |
 

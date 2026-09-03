@@ -58,7 +58,7 @@ trade-agents/
 ## 测试
 
 ```bash
-# 全部单测（42 个，node --test；Windows 须用 tests/*.test.mjs glob，勿传目录）
+# 全部单测（53 个，node --test；Windows 须用 tests/*.test.mjs glob，勿传目录）
 node --test tests/*.test.mjs
 
 # JS 语法
