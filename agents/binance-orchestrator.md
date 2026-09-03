@@ -93,6 +93,10 @@ Read `<skill-root>/skills/trade-assistant/SKILL.md` → "Environment Facts" for 
 
 ## Process
 
+- **读取个人策略覆盖**（若 `${TRADE_HOME}/strategy-overrides.md` 存在）：按 SKILL.md
+  「Personal Strategy Overrides」——覆盖优先于 references；影响决策/计划时在中文汇报里标注「应用覆盖: …」。
+  查询「运行策略/覆盖是啥」用 `node scripts/overrides.mjs view`。
+
 1. Classify the user's intent into one decision-table row.
 2. For skill-backed rows, first Read that skill's `SKILL.md` / references for exact syntax.
 3. Execute via Bash **serially**, `sleep 2-4` between calls.
