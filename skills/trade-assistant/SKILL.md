@@ -127,6 +127,12 @@ Routing rule of thumb: **analysis/manual** → /binance+cli; **validate a direct
 
 ## Environment Self-Check (once per session; `--net` on network/connectivity triggers)
 
+The check starts by reporting the runtime environment (OS/arch/Node, shell
+hints, whether the Windows user-env registry is readable). Registry-vs-process
+comparison and the canonical engine-dir probes are Windows-only; on macOS/Linux
+envcheck degrades to process-env only and reports so — the environment line
+makes the applicable scope obvious.
+
 Run `node scripts/envcheck.mjs` **once per session** on the first trade-related
 request (local only: env vars + dependency readiness — instant). When the user
 asks **网络联通/为什么连不上/交易前** or reports a network/proxy/engine
