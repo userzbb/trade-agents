@@ -210,6 +210,26 @@ export function readUserEnv() {
 let userEnvReader = readUserEnv;
 export function __setUserEnvReaderForTest(fn) { userEnvReader = fn; }
 
+// Runtime-environment detection: platform/arch/node, shell hints from the
+// process env, and whether the Windows user-env (registry) is inspectable.
+// Informs the rest of the checks (registry & canonical engine dirs are
+// Windows-only; mac/Linux degrade gracefully). Always info/ok — never blocks.
+export function probeRuntime({ procEnv = {}, platform = process.platform, arch = process.arch, nodeVer = Number(process.versions?.node?.split('.')[0]) } = {}) {
+  const rows = [];
+  let shell = '未知';
+  if (procEnv.MSYSTEM) shell = 'Git Bash / MSYS';
+  else if (procEnv.PSModulePath || procEnv.COMSPEC?.toLowerCase().includes('cmd.exe')) shell = 'PowerShell / cmd';
+  else if (/[/\\](bash|zsh)$/i.test(procEnv.SHELL || '')) shell = procEnv.SHELL.split(/[/\\]/).pop();
+  const isWin = platform === 'win32';
+  const userEnvNote = isWin ? '用户环境(注册表)可读 → 会对照进程 vs 注册表' : '无注册表 → 只看当前进程 env（mac/Linux）';
+  rows.push({ level: 'ok', text: `运行环境：${platform} (${arch}) · Node ${nodeVer} · shell: ${shell} · ${userEnvNote}` });
+  if (shell === '未知') rows.push({ level: 'info', text: 'shell：进程 env 无 MSYSTEM / PSModulePath / COMSPEC / SHELL 线索 → 无法推断具体 shell（Git Bash / PowerShell 运行时会自动识别）。' });
+  if (!isWin) rows.push({ level: 'info', text: '非 Windows：引擎默认目录探测跳过（无 E:\\trade-bots 概念）；数据层请在 TRADE_HOME 指定，默认 D:/trade 仅为 Windows 示例。' });
+  const platformName = isWin ? 'Windows' : { darwin: 'macOS', linux: 'Linux' }[platform] || platform;
+  const summary = isWin ? `运行于 Windows · ${shell}` : `运行于 ${platformName} · ${shell} · 只看进程 env`;
+  return { rows, summary };
+}
+
 // Dependency readiness — read-only, local, <1s. warn-only (per-role optional).
 export function probeDeps({ run, nodeMajor = Number(process.versions.node?.split('.')[0]), platform = process.platform } = {}) {
   const rows = [];
@@ -328,11 +348,17 @@ function main() {
   const args = process.argv.slice(2);
   const wantNet = args.includes('--net');
   const wantDeps = !args.includes('--no-deps');
+  // Runtime first: OS/arch/node + shell hints + registry-inspectability. This
+  // line never blocks — it only informs the rows below. Non-win machines have
+  // no E:\trade-bots concept, so probes are emptied (runtime row already notes
+  // the mac/Linux degrade); win32 keeps the canonical-dir probes.
+  const runtime = probeRuntime({ procEnv: process.env });
+  const runtimeIsWin = process.platform === 'win32';
   const userEnv = userEnvReader();
-  const envRes = analyzeEnv({ procEnv: process.env, userEnv, probes: PROBES() });
+  const envRes = analyzeEnv({ procEnv: process.env, userEnv, probes: runtimeIsWin ? PROBES() : {} });
   const tag = { ok: '[OK]', info: '[·]', warn: '[!]', err: '[✗]' };
 
-  const rows = [...envRes.rows];
+  const rows = [...runtime.rows, ...envRes.rows];
   let depRes = null;
   if (wantDeps) {
     depRes = probeDeps({});
@@ -365,7 +391,7 @@ function main() {
 
   for (const r of rows) console.log(`${tag[r.level]} ${r.text}`);
   console.log('');
-  console.log(summary);
+  console.log(`${summary} · ${runtime.summary}`);
   if (envRes.fixes.length) {
     console.log('修复（需你 CONFIRM 后 agent 才执行 setx；改后完全重启 Claude Code 生效）:');
     for (const f of envRes.fixes) console.log(`  ${f}`);
