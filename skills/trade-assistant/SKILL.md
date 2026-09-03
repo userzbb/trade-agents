@@ -9,6 +9,12 @@ description: 币安 U 本位永续合约交易助手（D:\trade 项目），强�
 
 **Strategy-parameter model.** `references/` is the canonical ruleset AND holds the *reference defaults* for the core risk image (equity 336U, 20x isolated, normal position 25%, per-trade red line 6%, daily stop 8%). Those numeric defaults are **overridden per-user** by `D:\trade\strategy-profile.json` (`${DATA_ROOT}`) when present — the user sets it in a first-time dialogue (agent asks), uses it by default, and changes it later via agent-offered options. **Safety protocols — CONFIRM gate, account isolation, no-hedge, no-averaging-down, 3-loss cooldown, no new positions 01:00–07:00, the 8% daily forced stop, and the 25%/40% drawdown circuit-breakers — are HARD and never profile-driven.**
 
+**References are a SUGGESTION baseline, not a per-user mandate.** Personalizing
+strategy (signal filters, game-theory script stages, what NOT to trade, any
+prose rule) lives in the user's own `${TRADE_HOME}/strategy-overrides.md`
+(`D:\trade\strategy-overrides.md`), NOT in `references/`. Precedence:
+**user override > reference**. References stay shared and unchanged.
+
 > **Language rule: all user-facing output — conversation tables, 复盘/周报/月报/计划 document bodies, summaries, error messages — MUST be in Chinese.** This file, references, and scripts are in English for the LLM's efficiency.
 
 ## ABSOLUTE GATE — NO (A) fund / (B) engine action without user CONFIRM
@@ -46,6 +52,32 @@ The core risk image is **yours, not a fixed rule**: it lives in `D:\trade\strate
 **Output reflection.** When a profile is applied, `solve.mjs`/`pyramid.mjs` print `策略档案已应用: …`. If the effective per-trade cap differs from the 6% reference default, the generated plan must call it out.
 
 **Non-goal.** The profile carries ONLY the core risk image above. Tier thresholds, selection thresholds, wick buffer, pyramid batches, and signal parameters stay in `references/` as reference defaults.
+
+## Personal Strategy Overrides (your strategy layer; references stay untouched)
+
+The user's own strategy rules (selection/S1-S6 filters, game-theory script
+stages, entries, what-NOT-to-trade, market-state notes) live in
+`${TRADE_HOME}/strategy-overrides.md` (default `D:\trade`), layered OVER the
+`references/` suggestion baseline. Precedence: **override > reference**;
+references are never edited for personalization.
+
+Rules:
+1. **Read it before every analysis/plan/execution-route decision** (Core
+   Workflow A step 0 and any solve/pyramid/backtest plan). If absent, you may
+   seed it with `node scripts/overrides.mjs seed` (idempotent, writes once) —
+   only when the user wants personalization; do not create it unprompted.
+2. **Edit flow = dialogue.** User states a change ("S3 加成交额≥2亿过滤", "BTR
+   第4幕不做多") → agent edits the md under that explicit user choice → `git -C
+   ${TRADE_HOME} add strategy-overrides.md` + `commit -m "策略覆盖更新: …"`.
+   Not an (A)/(B) action → no typed CONFIRM, but NEVER change it silently or
+   invent rules; show what you will write.
+3. **Plan annotation (mandatory).** Any 交易计划/回测计划/执行方案 whose inputs
+   an override affects MUST state in the Chinese plan body:
+   `应用覆盖: "<rule>"（覆盖 references/0X「…」建议）`. If the numeric risk
+   profile (strategy-profile.json) is also applied, note both, e.g.
+   `策略档案已应用 · 应用覆盖: "只做 S1/S2"（覆盖 references/01 建议）`.
+4. `overrides.mjs view` shows the file; `seed` creates it from the bundled
+   template. Inspect the file before overriding the same section twice.
 
 ## Three-Tool Orchestration (top-level routing)
 
@@ -144,6 +176,7 @@ This skill **strongly depends on the external `/binance` skill** (user-level, `n
 | `solve.mjs <SYM> [--entry] [--qty] [--equity] [--posfrac]` | **stop/TP solver** — EV-optimal grid + first-touch Monte-Carlo + tier discounts + wick buffer; >6% red line → shrink suggestion | **every trade plan (mandatory)** |
 | `pyramid.mjs <SYM> <LONG\|SHORT> --equity <U>` | pyramid builder: probe 2% → add 6% → trend 12%, each batch's triggers + composite stop | new position (default build method) |
 | `profile.mjs view\|set\|clear` | per-user risk image view/edit (strategy-profile.json) | first-time setup; risk-style change |
+| `overrides.mjs seed\|view` | personal-strategy overrides file seed/view (`${TRADE_HOME}/strategy-overrides.md`, precedence over references) | first-time personalization; "改一下我的策略/规则" |
 | `position.mjs` | positions + open orders + P&L (incl. liq distance) | "现在呢/看持仓"; session start |
 | `sync.mjs --days N` | pull exchange flows into SQLite (truth source) | **daily close; before any report/review** |
 | `report.mjs [--days 30]` | P&L analysis: by coin/tier/big-loss/DD | "这周/这月表现"; review data source |
@@ -184,6 +217,9 @@ Hard rules:
 ## Core Workflows
 
 ### A. Analysis (feeds all three tools)
+0. **Read personal overrides** (`node scripts/overrides.mjs view` if a file may
+   exist; read the md) and apply precedence. Affected plan → annotate per the
+   Personal Strategy Overrides section.
 1. **Daily re-rank** (`scan.mjs` → filter per ref 01 → `coin.mjs` per candidate, sleep 3s between → output tone + ≤3 long + ≤3 short with S1–S6 labels).
 2. **Status check** ("现在呢"): `position.mjs` → per-position `coin.mjs` structure + key levels → output table + liq-distance + structure read; prompt at the 8% daily circuit-breaker.
 3. **Multi-view cross-validation (mandatory for any directional/position decision)** — do NOT rest a conclusion on one model. Gather **≥3 independent views** and output a **consistency matrix**:
