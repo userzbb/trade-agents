@@ -34,6 +34,18 @@ test('envcheck: 全未设 → HUMMINGBOT_MCP_DIR err + setx(canon)；密码不�
   assert.ok(!all(res).includes('hb_p1_ft_2026'));
 });
 
+test('envcheck G1: probes:{}（非 win 降级路径）且 HUMMINGBOT_MCP_DIR 未设 → 不崩、无 undefined、setx 回落 canon', () => {
+  // Regression: main() passes probes:{} on mac/Linux. When HUMMINGBOT_MCP_DIR is
+  // unset, probes.hummingbotMCP is undefined — must NOT reach existsSync(undefined)
+  // (Node DEP0187) and must still fall back to the canonical Windows path.
+  const res = analyzeEnv({ procEnv: {}, userEnv: {}, probes: {} });
+  assert.ok(res.errCount >= 1);
+  assert.match(all(res), /HUMMINGBOT_MCP_DIR\s+未设/);
+  assert.ok(res.fixes[0].includes('setx HUMMINGBOT_MCP_DIR "E:\\trade-bots\\hummingbot\\mcp"'), all(res));
+  assert.ok(!all(res).includes('undefined'), all(res));
+  assert.ok(res.fixes.every((f) => !f.includes('undefined')), res.fixes.join('\n'));
+});
+
 test('envcheck: 未设但默认探测路径存在 → setx 指向探测到的路径', () => {
   const res = analyzeEnv({ procEnv: {}, userEnv: {}, probes });
   assert.ok(res.fixes.some((f) => f.includes(probes.hummingbotMCP)), all(res));

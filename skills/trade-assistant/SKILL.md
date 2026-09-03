@@ -61,6 +61,11 @@ stages, entries, what-NOT-to-trade, market-state notes) live in
 `references/` suggestion baseline. Precedence: **override > reference**;
 references are never edited for personalization.
 
+Hard safety protocols — CONFIRM gate, account isolation, no-hedge /
+no-averaging-down, the 8% daily forced stop (tighten-only), the 25%/40%
+drawdown circuit-breakers, and the per-trade red line from
+strategy-profile.json — are NOT overrideable via this file.
+
 Rules:
 1. **Read it before every analysis/plan/execution-route decision** (Core
    Workflow A step 0 and any solve/pyramid/backtest plan). If absent, you may

@@ -106,7 +106,9 @@ export function analyzeEnv({ procEnv = {}, userEnv = null, probes = PROBES() } =
       if (!inProc && !inUser) {
         errCount += 1;
         rows.push({ level: 'err', text: `HUMMINGBOT_MCP_DIR  未设 → hummingbot-mcp MCP 无法启动（${m.consumer}）。` });
-        const cand = existsSync(probes.hummingbotMCP) ? probes.hummingbotMCP : m.canon;
+        // probes.hummingbotMCP may be undefined on non-win (main() passes {}),
+        // so guard before existsSync to avoid Node DEP0187 (existsSync(undefined)).
+        const cand = probes.hummingbotMCP && existsSync(probes.hummingbotMCP) ? probes.hummingbotMCP : m.canon;
         fixes.push(`setx HUMMINGBOT_MCP_DIR "${cand}"`);
         continue;
       }
@@ -122,7 +124,7 @@ export function analyzeEnv({ procEnv = {}, userEnv = null, probes = PROBES() } =
         warnCount += 1;
         rows.push({ level: 'warn', text: `HUMMINGBOT_MCP_DIR = ${v}（${src(m)}）—— 非 Windows 绝对路径(盘符:\\ 开头)，请核对。` });
       } else {
-        if (existsSync(probes.hummingbotMCP) && v.replace(/\\/g, '/').toLowerCase() !== probes.hummingbotMCP.replace(/\\/g, '/').toLowerCase()) {
+        if (probes.hummingbotMCP && existsSync(probes.hummingbotMCP) && v.replace(/\\/g, '/').toLowerCase() !== probes.hummingbotMCP.replace(/\\/g, '/').toLowerCase()) {
           warnCount += 1;
           rows.push({ level: 'warn', text: `HUMMINGBOT_MCP_DIR = ${v}（${src(m)}）—— 与默认部署 ${probes.hummingbotMCP} 不同（引擎可装别处，确认即可）。` });
         }
