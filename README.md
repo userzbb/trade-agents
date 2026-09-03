@@ -28,20 +28,22 @@ claude --plugin-dir D:/claude-dev/agents/trade-agents
 # 或会话内 /plugin → Add from folder → 选择 D:\claude-dev\agents\trade-agents
 ```
 
-> **Windows 说明（先读）**：本项目文档里的命令以 **Git Bash（MSYS）** 为准编写 —— `/e/...` = `E:\...`、`export A=B`、`MSYS_NO_PATHCONV=1` 都是 Git Bash 语法，**PowerShell / cmd 里无效**。请装 [Git for Windows](https://git-scm.com/)，用其 Git Bash 执行各 `bash` 代码块。
+> **Windows 说明（先读）**：本项目的命令默认以 **Windows 11 PowerShell** 为准编写（`setx`、`$env:变量 = "值"`、`cd E:\...`）。代码块语言标注为 `powershell` 时请用 PowerShell 执行；`bash` 标注的块若是通用 Node/命令行（不依赖 PowerShell 特有语法），在 PowerShell 里同样能跑。
 >
-> 要让 **Claude Code / 插件脚本**（如 `.mcp.json` 的 `${HUMMINGBOT_MCP_DIR}`）读到变量：必须设成 **Windows 用户环境变量** —— shell 里临时 `export` 只对当前进程生效，Claude Code 从别的终端/桌面启动就读不到。用下面 `setx`（永久；设置后**重开 Claude Code** 才生效），或 系统属性 → 高级系统设置 → 环境变量。
+> **不用 Git Bash / MSYS 语法**：`export A=B`、`/e/...` 这类路径、`MSYS_NO_PATHCONV=1` 前缀在 PowerShell 里**无效/不需要**，请勿照搬。唯一例外是 NFI 官方 `.sh` 脚本步骤（见文），那几段会明确标注「须 Git Bash」。
+>
+> 要让 **Claude Code / 插件脚本**（如 `.mcp.json` 的 `${HUMMINGBOT_MCP_DIR}`）读到变量：必须设成 **Windows 用户环境变量** —— shell 里临时设只对当前进程生效，Claude Code 从别的终端/桌面启动就读不到。用下面 `setx`（永久；设置后**重开 Claude Code** 才生效），或 系统属性 → 高级系统设置 → 环境变量。
 
 ```powershell
-# 设成 Windows 用户环境变量（推荐，永久生效）
+# 设成 Windows 用户环境变量（推荐，永久生效；cmd / PowerShell 均可）
 setx TRADE_HOME "D:\trade"
 setx BINANCE_PROXY "http://127.0.0.1:7897"
 ```
 
-```bash
-# 或 Git Bash：仅当前会话临时生效
-export TRADE_HOME=D:/trade
-export BINANCE_PROXY=http://127.0.0.1:7897
+```powershell
+# 或仅当前 PowerShell 会话临时生效（重开终端即失效；仅调试用）
+$env:TRADE_HOME = "D:\trade"
+$env:BINANCE_PROXY = "http://127.0.0.1:7897"
 ```
 
 首次使用前：`binance-cli profile create` 配置 API 密钥（profile `my-main`）。
@@ -70,8 +72,8 @@ export BINANCE_PROXY=http://127.0.0.1:7897
 | /binance skill | 最新 | **强依赖**：数据/执行层（binance-cli 端点字典、认证规则） | `npx skills add binance/binance-skills-hub` |
 | binance-cli | npm v1.3.0（**仅 Windows npm 版**，官方安装脚本不兼容 Windows） | 签名账户查询 / 下单执行 | `npm install -g @binance/binance-cli` |
 | Binance API 密钥 | profile `my-main` | 签名请求鉴权（只在 `binance-cli` 里配置，勿写进代码） | `binance-cli profile create` → 填 API Key / Secret |
-| 本地代理 | `127.0.0.1:7897`（Clash 等） | 直连币安被墙时走代理 | `export BINANCE_PROXY=http://127.0.0.1:7897`（另设 `HTTPS_PROXY`/`HTTP_PROXY` 给 binance-cli） |
-| 数据层 | `D:\trade`（可覆盖） | SQLite（`data/trade.db`）+ 复盘归档（`retrospectives/`） | `export TRADE_HOME=D:/trade`（目录可自动创建） |
+| 本地代理 | `127.0.0.1:7897`（Clash 等） | 直连币安被墙时走代理 | `setx BINANCE_PROXY "http://127.0.0.1:7897"`（binance-cli 的代理由 agent 调用时自动内联，见上） |
+| 数据层 | `D:\trade`（可覆盖） | SQLite（`data/trade.db`）+ 复盘归档（`retrospectives/`） | `setx TRADE_HOME "D:\trade"`（目录可自动创建） |
 | Docker Desktop | Hyper-V 后端 | 运行 Freqtrade / Hummingbot 引擎容器 | Docker Desktop 官网；代理设 GUI（Settings→Resources→Proxies→`127.0.0.1:7897`） |
 | Python ≥3.11 + uv | — | Hummingbot MCP server 运行环境 | `uv` 官方安装器 |
 | **Freqtrade**（必需·强依赖） | [freqtrade/freqtrade](https://github.com/freqtrade/freqtrade) · `E:\trade-bots\freqtrade` | 方向性回测/Hyperopt/执行（REST `127.0.0.1:8080`） | 见 [Freqtrade 部署](#freqtrade方向性回测执行) |
@@ -104,32 +106,32 @@ setx HUMMINGBOT_API_USERNAME "admin"
 setx HUMMINGBOT_API_PASSWORD "hb_p1_paper_2026"
 ```
 
-> 仅当前会话的临时替代（只对当前终端里新起的进程可见）：
+> 仅当前会话的临时替代（只对当前终端里新起的进程可见；重开即失效，仅调试用）：
 > - PowerShell：`$env:HUMMINGBOT_MCP_DIR = 'E:\trade-bots\hummingbot\mcp'`（其余类推）
-> - Git Bash：`export HUMMINGBOT_MCP_DIR=/e/trade-bots/hummingbot/mcp` —— `/e/` 是 Git Bash 对 `E:\` 的 MSYS 写法，**PowerShell/cmd 无效**（会被当成相对路径）。
+> - ⚠️ 不要用 Git Bash 的 `/e/trade-bots/...` 或 `export` 写法——在 PowerShell/cmd 里 `/e/` 会被当成相对路径、`export` 不存在；持久化请用上面的 `setx`。
 
 > **首次调用 skill 会自动跑一次环境自检**（`scripts/envcheck.mjs`，只读）。默认本地自检 = **环境变量 + 依赖**（对照「当前进程 env」与「Windows 用户环境」，并探测 node / binance-cli / uv / docker / `/binance` skill 是否就绪）；加 `--net` 再追加**网络联通自检**（代理 `127.0.0.1:7897` → `fapi.binance.com`，Freqtrade / Hummingbot / NFI 引擎 REST）。发现 `HUMMINGBOT_MCP_DIR` 缺失 / MSYS 路径 / 依赖缺失等问题时，agent 会展示 setx 或安装方案、等你 CONFIRM 后才执行；改完需**完全重启 Claude Code** 生效（`.mcp.json`/MCP 在启动时读环境）。说「环境自检」/「修环境变量」触发默认自检；说「**网络联通** / 为什么连不上 / 交易前」触发 `envcheck.mjs --net`。
 
 ### Freqtrade（方向性回测/执行）
 
-```bash
+```powershell
 # Docker（dry-run，api_server 8080）
-cd /e/trade-bots/freqtrade && docker compose up -d
-# 下载数据 + 回测（Windows 注意 MSYS_NO_PATHCONV=1 防路径改写）
-MSYS_NO_PATHCONV=1 docker exec freqtrade freqtrade download-data --config /freqtrade/user_data/config.json --pairs BTC/USDT:USDT --timeframe 1h --timerange 20250101-20250701
-MSYS_NO_PATHCONV=1 docker exec freqtrade freqtrade backtesting --config /freqtrade/user_data/config.json --strategy RsiMomentum --timerange 20250101-20250701
-curl -s http://127.0.0.1:8080/api/v1/ping   # {"status":"pong"}
+cd E:\trade-bots\freqtrade; docker compose up -d
+# 下载数据 + 回测（PowerShell 无 Git Bash 的路径改写问题）
+docker exec freqtrade freqtrade download-data --config /freqtrade/user_data/config.json --pairs BTC/USDT:USDT --timeframe 1h --timerange 20250101-20250701
+docker exec freqtrade freqtrade backtesting --config /freqtrade/user_data/config.json --strategy RsiMomentum --timerange 20250101-20250701
+curl.exe -s http://127.0.0.1:8080/api/v1/ping   # {"status":"pong"}
 ```
 要点：容器内代理 `HTTPS_PROXY=http://host.docker.internal:7897`；`api_server.listen_ip_address` 须 `0.0.0.0`；`jwt_secret_key` ≥32 字符。详见 `references/08-freqtrade-bridge.md`。
 
 ### Hummingbot（网格/做市/套利执行）
 
-```bash
+```powershell
 # API server（Docker，8000）+ MCP（uv）
-cd /e/trade-bots/hummingbot/hummingbot-api && docker compose up -d
-cd /e/trade-bots/hummingbot/mcp && uv sync && cp .env.example .env   # 填 API 凭据
+cd E:\trade-bots\hummingbot\hummingbot-api; docker compose up -d
+cd E:\trade-bots\hummingbot\mcp; uv sync; Copy-Item .env.example .env   # 填 API 凭据
 # 验证 MCP（proper initialize 需 protocolVersion/capabilities/clientInfo）
-printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"t","version":"1"}}}\n' | uv run main.py
+'{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"t","version":"1"}}}' | uv run main.py
 ```
 P1 用 `binance_perpetual_paper_trade` 模拟盘（零 key）；实盘需 `hbot connect binance_perpetual` 配独立子账户 key。详见 `references/09-hummingbot-bridge.md`。
 
@@ -141,15 +143,16 @@ NFI 是**可选·推荐**的现成高星趋势策略（非必需），定位 = *
 
 > ⚠️ NFI（X7）是**全市场选币**策略（40-80 pairs 设计），**不做单币局部出单验证**（单币短期 0 单是正常现象，非故障）——启用时机由 LLM 研判/交叉验证决定。
 
-```bash
+```powershell
 # 官方仓库 + 文档
 #   repo: https://github.com/iterativv/NostalgiaForInfinity
 #   docs: https://iterativv.github.io/NostalgiaForInfinity/
-cd /e/trade-bots
-git clone https://github.com/iterativv/NostalgiaForInfinity.git nfi && cd nfi
-cp live-account-example.env .env        # 配币安 API key（类型/存放见 docs/nfi-deployment.md）；DRY_RUN=true
-docker compose up -d --build            # 官方 compose，默认策略 NostalgiaForInfinityX7 / futures / 5m
-curl -s http://127.0.0.1:8989/api/v1/ping
+cd E:\trade-bots
+git clone https://github.com/iterativv/NostalgiaForInfinity.git nfi
+cd nfi
+Copy-Item live-account-example.env .env   # 配币安 API key（类型/存放见 docs/nfi-deployment.md）；DRY_RUN=true
+docker compose up -d --build              # 官方 compose，默认策略 NostalgiaForInfinityX7 / futures / 5m
+curl.exe -s http://127.0.0.1:8989/api/v1/ping
 ```
 
 详见 [`docs/nfi-deployment.md`](docs/nfi-deployment.md)（部署 + 密钥类型 + 官方链接 + 实测验证记录）与 `references/10-nfi-bridge.md`。

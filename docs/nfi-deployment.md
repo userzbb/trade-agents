@@ -51,16 +51,16 @@
 
 ## 部署流程（官方）
 
-> **本节与「回测」命令均为 Git Bash（MSYS）**：`cd /e/...`（=`E:\...`）、`cp`、`docker compose`、官方 `.sh` 脚本都须在 Git Bash 运行。PowerShell/cmd 用户把 `/e/trade-bots/...` 换成 `E:\trade-bots\...`，或直接用 Git Bash。
+> **部署流程默认 Windows 11 PowerShell**（`cd E:\...`、`Copy-Item`、`curl.exe`）。唯一例外是下方「回测」段要跑**官方 `.sh` 脚本**——那一段须 Git Bash（已标注），PowerShell 用户装 [Git for Windows](https://git-scm.com/) 后用 Git Bash 执行那一段即可。
 
-```bash
+```powershell
 # ① clone（独立目录，勿与现有 freqtrade 混放）
-cd /e/trade-bots
+cd E:\trade-bots
 git clone https://github.com/iterativv/NostalgiaForInfinity.git nfi
 cd nfi
 
 # ② 配置 .env（从官方模板复制）
-cp live-account-example.env .env
+Copy-Item live-account-example.env .env
 # 编辑 .env 关键项：
 #   FREQTRADE__EXCHANGE__KEY / SECRET    → 独立币安子账户 key（勿共享）
 #   FREQTRADE__EXCHANGE__NAME=binance
@@ -74,12 +74,13 @@ docker compose up -d --build
 docker compose logs -f freqtrade   # 看启动日志
 
 # ④ 验证
-curl -s http://127.0.0.1:8989/api/v1/ping   # {"status":"pong"}（端口看 .env 的 API_SERVER__LISTEN_PORT）
+curl.exe -s http://127.0.0.1:8989/api/v1/ping   # {"status":"pong"}（端口看 .env 的 API_SERVER__LISTEN_PORT）
 ```
 
 ## 回测（现成数据 + 官方 tools）
 
 > NFI 历史数据从官方数据仓库下载（非 freqtrade download-data）。只读，免 CONFIRM。
+> ⚠️ 本段要跑官方 `.sh` 脚本 → **须 Git Bash**（PowerShell 里没有 `export`/`.sh`）；用 Git Bash 打开后执行：`cd /e/trade-bots/nfi`。
 
 ```bash
 # Git Bash（MSYS）命令（本块要跑官方 .sh，须 Git Bash）
