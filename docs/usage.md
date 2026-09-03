@@ -28,6 +28,7 @@
 | 环境自检 / 修环境变量 / 为什么 hummingbot 连不上 | skill → `envcheck.mjs`（默认 env+依赖，本地；会话首个交易请求自动跑一次） | 环境变量/依赖状态表（当前进程 vs Windows 用户环境）；缺的必需变量 → setx 方案待你 CONFIRM |
 | 网络联通 / 为什么连不上 / 交易前 / 代理或引擎问题 | skill → `envcheck.mjs --net` | 本地 env+依赖 + 网络联通结果（代理→fapi + Freqtrade/Hummingbot/NFI REST）；fapi 经代理不通 → 退出码 2，先查代理 7897 是否在跑 |
 | 对候选币深查 OI/主动盘 | skill → `coin.mjs <SYM>` | 持仓量 OI + taker 买占比 + 账户LS 确认趋势 |
+| 我想改一下策略/规则（S1-S6 / 博弈 / 禁区） | skill → `overrides.mjs seed`（首建）+ 对话编辑 `D:\trade\strategy-overrides.md` + git commit | 覆盖生效：优先于 references；相关计划/执行方案标注「应用覆盖: …（覆盖 references/0X 建议）」 |
 
 ## 常用命令速查（scripts/ 目录下）
 
@@ -39,6 +40,8 @@ node prob.mjs ARBUSDT 0.113 1000 target=0.118 --stop 0.111   # 概率
 node solve.mjs ARBUSDT --entry 0.113 --qty 1000 --equity 600 # 止损止盈求解（每单必跑；equity 默认取策略档案）
 node pyramid.mjs ARBUSDT LONG --equity 600                   # 金字塔建仓（equity/杠杆/红线默认取策略档案）
 node profile.mjs set --equity 600 --per-trade-cap-pct 0.05   # 设置个人风险画像（首次采参/变更）
+node overrides.mjs view                # 查看个人策略覆盖（D:\trade\strategy-overrides.md）
+node overrides.mjs seed                # 首次幂等创建覆盖文件（已存在则不覆盖，保留你的编辑）
 node envcheck.mjs                    # 环境自检（默认 env+依赖，本地：当前进程 vs Windows 用户环境；缺的必需变量给 setx 建议）
 node envcheck.mjs --net              # 追加网络联通自检（代理→fapi + 三引擎 REST）
 node position.mjs                      # 持仓速览

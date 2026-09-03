@@ -20,13 +20,15 @@
 | 全部平仓后 | **复盘 md（必须）**：按 `references/07` 模板 | `D:\trade\retrospectives\复盘_起始-结束_币种.md` | git commit |
 | 周度 | **每周日**或用户说"周报" | `D:\trade\retrospectives\周报_YYYYMMDD_YYYYMMDD.md` | git commit |
 | 月度 | **每月 1 号**或用户说"月报" | `D:\trade\retrospectives\月报_YYYY-MM.md` | git commit |
-| 策略变更 | 直接编辑 references/ 对应文档 | references/ | git commit |
+| 策略变更 | 共享基线 → 编辑 references/ 对应文档；**个人化（你的偏好/禁区）→ 改 `D:\trade\strategy-overrides.md`**（在你 `TRADE_HOME` 下），勿改 references | references/ · `strategy-overrides.md` | git commit |
 
 - **复盘触发**：用户说"复盘/平仓了/这一单结束了"，或检测到持仓清零且有已实现盈亏未生成复盘时主动提示。
 - **复盘必备要素**：执行 vs 计划偏离分析、盈亏归因（信号质量/执行纪律/运气三部分占比）、信号类型（S1-S6）+ 币种分级（T1-T3）标注、至少一条可执行改进项。
 - **周报/月报定位**：决策文档，产出"决策输入"区块（手续费占比、T3 币种盈亏、盈利天占比、回撤），喂给下期 `plan.mjs` 目标校验。月报必须回答三个问题：①哪个信号类型贡献了主要利润/亏损？②纪律执行率？③下月仓位阶梯上移还是下调？
 
-## 策略知识库（references/，唯一真相源）
+## 策略知识库（references/，共享建议基线）
+
+> references 是**共享建议基线**（全插件共享、不因个人化而改）；你的个人偏好/禁区/规则改 `D:\trade\strategy-overrides.md`（在你 `TRADE_HOME` 下，工具箱 `overrides.mjs seed|view`），**勿改 references**——覆盖优先于 references，相关计划会标注「应用覆盖」。
 
 | 文件 | 内容 | 何时读 |
 |---|---|---|
@@ -60,6 +62,7 @@
 | `engines.mjs` | 三引擎统一看板（Freqtrade/Hummingbot/binance 持仓+盈亏） | `node engines.mjs` | "看三引擎状态/统一看板"；会话开始 |
 | `envcheck.mjs` | 环境自检：当前进程 env vs Windows 用户环境(注册表) + 依赖就绪；缺 `HUMMINGBOT_MCP_DIR` 或 MSYS `/x/` 路径 → 给 setx 方案 | `node envcheck.mjs`（默认 env+依赖，本地）；`node envcheck.mjs --net`（追加网络联通：代理→fapi + Freqtrade/Hummingbot/NFI REST） | 每次会话首个交易请求自动跑一次（本地）；"网络联通/为什么连不上/交易前" 或代理/引擎问题 → `--net`；"环境自检/修环境变量" |
 | `profile.mjs view\|set\|clear` | 个人风险画像读写（strategy-profile.json） | `node profile.mjs set --equity 600` | 首次采参/风险风格变更 |
+| `overrides.mjs seed\|view` | 个人策略覆盖文件：把随插件模板幂等首建到 `D:\trade\strategy-overrides.md`（已存在不覆盖，保留你的编辑），或查看当前覆盖 | `node overrides.mjs seed` / `node overrides.mjs view` | 首次个性化；「改一下我的策略/规则」——覆盖优先于 references，计划会标注「应用覆盖」 |
 
 所有脚本自动处理代理/重试/限流。在 `scripts/` 目录运行。
 

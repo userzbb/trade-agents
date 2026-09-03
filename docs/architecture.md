@@ -19,7 +19,7 @@
 └───────────────────┬───────────────────────────────────┘
                     ▼
 ┌─ 能力层（本插件内）─────────────────────────────────────┐
-│  references/00-10  策略知识库 + 引擎桥接文档（唯一真相源） │
+│  references/00-10  策略知识库 + 引擎桥接文档（建议基线）   │
 │  scripts/          分析工具箱（分析/引擎桥/profile/vector）│
 │  .mcp.json          外部 hummingbot-mcp（uv，仅引擎）      │
 └───────────────────┬───────────────────────────────────┘
@@ -34,12 +34,13 @@
 │  各自独立币安子账户；策略级操作走 CONFIRM                │
 └───────────────────┬───────────────────────────────────┘
                     ▼
-┌─ 数据/执行层（外部强依赖 + 本地数据层）──────────────────┐
-│  /binance skill（binance-cli）：行情/费率/持仓/下单       │
-│  binance 生态：crypto-market-rank / trading-signal /    │
-│    wallet-tracker / query-token-*                      │
-│  D:\trade：SQLite + retrospectives + plans（TRADE_HOME）│
-└───────────────────────────────────────────────────────┘
+┌─ 数据/执行层（外部强依赖 + 本地数据层） ─────────────────────┐
+│  /binance skill（binance-cli）：行情/费率/持仓/下单          │
+│  binance 生态：crypto-market-rank / trading-signal /         │
+│    wallet-tracker / query-token-*                            │
+│  D:\trade（TRADE_HOME）：SQLite + retrospectives + plans     │
+│    + strategy-overrides.md（个人策略覆盖，优先于 references）│
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ## 组件职责矩阵
@@ -49,14 +50,14 @@
 | 交互 | trade-assistant skill | 用户入口、CONFIRM、文档编排、binance 决策 | 指令英文 / 输出中文 |
 | 自治 | retrospective-writer agent | 复盘/周报/月报 md 生成 + 相似案例检索 | 提示词英文 / 输出中文 |
 | 自治 | binance-orchestrator agent | 选 binance skill/CLI、格式化调用、汇总 | 提示词英文 / 输出中文 |
-| 能力 | references/00-10 | 策略唯一真相源（S1-S6/进场模板/风控/庄家剧本/引擎桥/NFI） | 英文 |
+| 能力 | references/00-10 | 策略知识库 · **建议基线**（S1-S6/进场模板/风控/庄家剧本/引擎桥/NFI）；个人化与覆盖走数据层 `strategy-overrides.md`（优先于本层） | 英文 |
 | 能力 | scripts/*.mjs | 分析工具箱 + 文档生成脚本 + vector.mjs | 注释英文 / 输出中文 |
 | 能力 | .mcp.json | MCP 注册：仅外部 hummingbot-mcp（uv）；读走 scripts、写走 binance-cli+CONFIRM | JSON |
 | 引擎 | Freqtrade | 方向性回测/Hyperopt/dry-run 执行（REST，插件=控制面） | — |
 | 引擎 | Hummingbot | 网格/做市/套利/三重屏障执行（MCP，插件=控制面） | — |
 | 引擎 | NFI（可选） | 现成趋势策略回测/交叉验证（独立 compose，REST 8989） | — |
 | 数据 | /binance 生态 | 行情/费率/信号/情绪/链上数据与执行 | — |
-| 数据 | D:\trade | SQLite + md 归档（用户数据） | 中文文档 |
+| 数据 | D:\trade | SQLite + md 归档 + `strategy-overrides.md`（个人策略覆盖，优先于 references） | 中文文档 |
 
 ## 关键数据流
 
@@ -71,7 +72,7 @@
 ## 依赖模型
 
 - **外部强依赖**：`/binance` skill（binance-cli）—— 数据与执行层。`npx skills add binance/binance-skills-hub`。
-- **数据层**：`D:\trade`（`TRADE_HOME` 可覆盖）—— SQLite、复盘归档、交易计划。
+- **数据层**：`D:\trade`（`TRADE_HOME` 可覆盖）—— SQLite、复盘归档、交易计划、`strategy-overrides.md`（个人策略覆盖，优先于 references）。
 - **环境事实**（代理 `127.0.0.1:7897`、`fapi.binance.com`、限流 sleep 2–4、时钟漂移重试、`binance-cli` v1.3.0 profile `my-main`）只写一份在 SKILL.md，agents 引用不复制。
 
 ## 英文/中文边界（硬规则）
@@ -84,5 +85,6 @@
 - skill 层唯一真相源 = `skills/trade-assistant/`（本插件内）。
 - 旧镜像 `D:\claude-dev\skills\trade-assistant` **已废弃**：不同步、不维护、不引用（CLAUDE.md 声明）。`npx skills add userzbb/trade-agents` 从本插件仓库直接装 skill。
 - 个人风险画像 `D:\trade\strategy-profile.json`（`TRADE_HOME` 下，`profile.mjs` 管理）覆盖 references 的数值默认（equity/杠杆/仓位/红线）；安全协议硬不可画像化。
+- 个人策略覆盖 `D:\trade\strategy-overrides.md`（`TRADE_HOME` 下，`overrides.mjs seed|view` 管理）：用户散文级个人策略（选币 S1-S6/博弈阶段/禁区等）**优先于** references 建议；被覆盖生效时计划正文标注「应用覆盖: …（覆盖 references/0X 建议）」。references 保持建议基线、不因个人化而改。
 - 环境/依赖/网络正确性：会话首个交易请求跑 `scripts/envcheck.mjs` 三层自检——默认本地 env+依赖（当前进程 env vs Windows 用户环境 + node/binance-cli/uv/docker 就绪），`--net` 追加网络联通（代理→fapi、引擎 REST）；触发词「网络联通/为什么连不上/交易前」。见 SKILL.md「Environment Self-Check」。
 - 任何策略规则或决策表变更：修改真相源 `skills/trade-assistant/` → 检查 agents/文档引用（无镜像可同步）。三处保持对齐：references ↔ agents 引用 ↔ 用户输出模板。

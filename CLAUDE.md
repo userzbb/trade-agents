@@ -13,7 +13,7 @@ Single installable Claude Code plugin for the Binance USDT-M perpetual futures s
 - Agents: `agents/*.md` (`retrospective-writer`, `binance-orchestrator`)
 - MCP: `.mcp.json` — registers only the external `hummingbot-mcp` (uv); no bundled Binance MCP server
 - Docs: `docs/` — architecture · skill-guide · agents · vector-search · usage · development · conventions
-- Data layer: `D:\trade` (`TRADE_HOME`) — SQLite + retrospectives + plans
+- Data layer: `D:\trade` (`TRADE_HOME`) — SQLite + retrospectives + plans + `strategy-overrides.md` (personal strategy overrides; precedence over references)
 - Mirror: `D:\claude-dev\skills\trade-assistant` (**deprecated, do not sync**)
 
 ## Iron rules
@@ -29,6 +29,7 @@ Single installable Claude Code plugin for the Binance USDT-M perpetual futures s
 ## Common tasks
 
 - **Change a strategy rule** → edit `references/<NN>-*.md` (English), update the SKILL.md references guide table if filenames change.
+- **Change personal strategy** → edit `${TRADE_HOME}/strategy-overrides.md` (dialogue, precedence over references); do NOT edit references for personalization.
 - **Add a script** → `skills/trade-assistant/scripts/` (zero-dep, comments English, user output Chinese); add a row to the toolbox tables in SKILL.md + `docs/skill-guide.md` + `docs/usage.md`.
 - **Add an agent** → follow `plugin-dev:agent-development` skill conventions + `docs/conventions.md` §10; `agents/<kebab-name>.md` with frontmatter (`name`/`description`/`model: inherit`/`color`/`tools`) + a `When to invoke` section; validate with `validate-agent.sh`; update `docs/agents.md`.
 - **Manage MCP registration** → `.mcp.json` (external `hummingbot-mcp` only); do NOT add a bundled Binance MCP server — reads go through `scripts/`, writes through `binance-cli` + CONFIRM.

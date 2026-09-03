@@ -91,7 +91,8 @@ git push origin main
 
 ## 数据层（独立 git 仓库，不在本插件仓库内）
 
-- `D:\trade`（`TRADE_HOME` 可覆盖）：`data/trade.db`、`retrospectives/`、`plans/`、`strategy-profile.json`、`coin-classification.json`、`vector-index.json`（gitignore）。
+- `D:\trade`（`TRADE_HOME` 可覆盖）：`data/trade.db`、`retrospectives/`、`plans/`、`strategy-profile.json`、`strategy-overrides.md`（个人策略覆盖，`overrides.mjs seed|view` 管理）、`coin-classification.json`、`vector-index.json`（gitignore）。
+- 个人策略覆盖文件 `D:\trade\strategy-overrides.md`（`TRADE_HOME` 下）：用户个人策略（选币 S1-S6 过滤/博弈阶段/禁区等散文规则）**优先于** `references/` 建议；模板随插件分发，`overrides.mjs seed` 幂等首建（已存在不覆盖，保留你的编辑）、`view` 查看。改动 = 对话里用户明确选择 → agent 编辑该 md 并在 `D:\trade` 数据层 git 仓库 commit（同复盘/周报归档先例）；**勿改 references 做个人化**（references 是共享建议基线）。相关计划/执行方案标注「应用覆盖: …（覆盖 references/0X 建议）」。
 - 复盘/周报/月报归档在 `D:\trade\retrospectives\`，由 agent 或 `summary.mjs` 生成并 git commit。
 
 ## 文档维护纪律（每次改动必读）

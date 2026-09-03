@@ -80,7 +80,7 @@ $env:BINANCE_PROXY = "http://127.0.0.1:7897"
 | binance-cli | npm v1.3.0（**仅 Windows npm 版**，官方安装脚本不兼容 Windows） | 签名账户查询 / 下单执行 | `npm install -g @binance/binance-cli` |
 | Binance API 密钥 | profile `my-main` | 签名请求鉴权（只在 `binance-cli` 里配置，勿写进代码） | `binance-cli profile create` → 填 API Key / Secret |
 | 本地代理 | `127.0.0.1:7897`（Clash 等） | 直连币安被墙时走代理 | `setx BINANCE_PROXY "http://127.0.0.1:7897"`（binance-cli 的代理由 agent 调用时自动内联，见上） |
-| 数据层 | `D:\trade`（可覆盖） | SQLite（`data/trade.db`）+ 复盘归档（`retrospectives/`） | `setx TRADE_HOME "D:\trade"`（目录可自动创建） |
+| 数据层 | `D:\trade`（可覆盖） | SQLite（`data/trade.db`）+ 复盘归档（`retrospectives/`）+ 个人策略覆盖 `strategy-overrides.md` | `setx TRADE_HOME "D:\trade"`（目录可自动创建） |
 | Docker Desktop | Hyper-V 后端 | 运行 Freqtrade / Hummingbot 引擎容器 | Docker Desktop 官网；代理设 GUI（Settings→Resources→Proxies→`127.0.0.1:7897`） |
 | Python ≥3.11 + uv | — | Hummingbot MCP server 运行环境 | `uv` 官方安装器 |
 | **Freqtrade**（必需·强依赖） | [freqtrade/freqtrade](https://github.com/freqtrade/freqtrade) · `E:\trade-bots\freqtrade` | 方向性回测/Hyperopt/执行（REST `127.0.0.1:8080`） | 见 [Freqtrade 部署](#freqtrade方向性回测执行) |
@@ -90,6 +90,8 @@ $env:BINANCE_PROXY = "http://127.0.0.1:7897"
 **向量检索（`vector.mjs`）零外部依赖**：不是外部向量数据库，是本地 BM25 检索（中文字符 bigram 分词 + 倒排索引），纯 Node 实现。**无需安装任何数据库、无需 API key、无需外部模型**；索引自动构建到 `${TRADE_HOME}/vector-index.json`（`D:/trade/vector-index.json`），源文件变化时自动重建。详见 [向量检索](docs/vector-search.md)。
 
 **可选依赖（binance-orchestrator 增强）**：信息面 / 信号 / 博弈面 / 链上查询走 `crypto-market-rank`、`binance-trading-signal`、`binance-wallet-tracker`、`query-token-*` 等用户级 skill，按各 skill 的安装方式（通常 `npx skills add <org>/<repo>`）安装；缺失时 orchestrator 会降级提示，不影响核心 skill/MCP。
+
+**个人策略覆盖层**：你的个人策略（选币 S1-S6 过滤 / 博弈阶段 / 禁区等）写在 `D:\trade\strategy-overrides.md`（在你的 `TRADE_HOME` 数据层，默认 `D:\trade`）——**对话维护**（说「改一下我的策略/规则」，agent 编辑该文件并在 `D:\trade` 数据层 git 仓库 commit），**优先于 `references/` 策略知识库建议**；被覆盖生效时，计划/执行方案正文会标注「应用覆盖: …」。`references/` 保持共享建议基线、不因个人化而改。
 
 ## 交易引擎部署方案（必需 · Freqtrade + Hummingbot）
 
