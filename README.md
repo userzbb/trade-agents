@@ -28,11 +28,18 @@ claude --plugin-dir D:/claude-dev/agents/trade-agents
 # 或会话内 /plugin → Add from folder → 选择 D:\claude-dev\agents\trade-agents
 ```
 
-> **Windows 说明（先读）**：本项目的命令默认以 **Windows 11 PowerShell** 为准编写（`setx`、`$env:变量 = "值"`、`cd E:\...`）。代码块语言标注为 `powershell` 时请用 PowerShell 执行；`bash` 标注的块若是通用 Node/命令行（不依赖 PowerShell 特有语法），在 PowerShell 里同样能跑。
+> **命令可移植、不锁死某 shell/系统（先读）**：核心命令（`node …`、`docker compose …`、`uv …`）在所有平台一致。**凡因 shell/OS 而异的地方**（环境变量、绝对路径、`curl` 别名），文档给**按环境对照写法**，你挑你那一列即可：
 >
-> **不用 Git Bash / MSYS 语法**：`export A=B`、`/e/...` 这类路径、`MSYS_NO_PATHCONV=1` 前缀在 PowerShell 里**无效/不需要**，请勿照搬。唯一例外是 NFI 官方 `.sh` 脚本步骤（见文），那几段会明确标注「须 Git Bash」。
+> | 场景 | Windows PowerShell | Git Bash / MSYS | macOS / Linux (bash/zsh) |
+> |---|---|---|---|
+> | 持久设用户环境变量 | `setx VAR "值"`（cmd 同） | `setx VAR "值"` | shell rc（`.zshrc`/`.bashrc`）`export VAR=值`，或 launchctl/systemd |
+> | 当前会话临时设 | `$env:VAR = "值"` | `export VAR=值` | `export VAR=值` |
+> | 绝对路径写法 | `E:\trade-bots\...`（`E:/…` 亦可） | `/e/trade-bots/...`（MSYS 映射 `E:\`） | `~/trade-bots/...` |
+> | `curl` | `curl.exe -s …`（`curl` 是 Invoke-WebRequest 别名） | `curl -s …` | `curl -s …` |
 >
-> 要让 **Claude Code / 插件脚本**（如 `.mcp.json` 的 `${HUMMINGBOT_MCP_DIR}`）读到变量：必须设成 **Windows 用户环境变量** —— shell 里临时设只对当前进程生效，Claude Code 从别的终端/桌面启动就读不到。用下面 `setx`（永久；设置后**重开 Claude Code** 才生效），或 系统属性 → 高级系统设置 → 环境变量。
+> 要让 **Claude Code / 插件脚本**（如 `.mcp.json` 的 `${HUMMINGBOT_MCP_DIR}`）读到变量：必须是 **Claude Code 启动进程能继承的环境** —— Windows 用用户环境变量（`setx` / 系统属性 → 高级系统设置 → 环境变量）；macOS/Linux 用 shell 登录环境。只在当前终端临时设、Claude Code 从别处启动是读不到的。Windows 设置后**重开 Claude Code** 生效。
+>
+> 例外：NFI 官方 `.sh` 脚本步骤只能在 Git Bash / macOS-Linux 跑（PowerShell 没有 `export`/`.sh`），那几段会明确标注。
 
 ```powershell
 # 设成 Windows 用户环境变量（推荐，永久生效；cmd / PowerShell 均可）

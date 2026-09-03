@@ -107,3 +107,13 @@ docs/*.md             # 用户可读，中文
 - **触发描述**：description 单行标量（勿块标量）；触发词保留中文；2–4 个触发场景 prose。
 - **引用不复制**：agent 不复制 SKILL.md 环境事实/决策表大段，引用 SKILL.md / references。
 - **开发 agent（本项目扩展开发）**：遵循 `docs/development.md` 的扩展步骤 + 本 conventions.md。
+
+## 11. 文档命令可移植性（不锁死单一 shell / OS）
+
+- 命令写成**可移植**：核心命令（`node …`、`docker compose …`、`uv …`、`git …`）跨平台一致，不贴 shell 专属语法。
+- 因 shell/OS 而异的地方（环境变量持久化、绝对路径拼写、`curl` 别名）给**按环境对照**，不锁死单一 shell。三类：
+  - **Windows PowerShell/cmd**：`setx`（持久）/ `$env:X="值"`（会话）、路径 `E:\...`（`E:/...` 亦可）、`curl.exe`。
+  - **Git Bash / MSYS**：`export X=值`、路径 `/e/...`（映射 `E:\`）、`MSYS_NO_PATHCONV=1`（防容器路径改写）。
+  - **macOS / Linux (bash/zsh)**：`export X=值`（持久进 `.zshrc`/`.bashrc` 或 launchctl/systemd）、路径 `~/...`、`curl`。
+- **agent 运行时块（SKILL.md / references / agents）保持 bash/MSYS 写法**：Claude Code 的 Bash 工具即 Git Bash，尤其 `docker exec` 容器路径与官方 `.sh` 必须 bash——不要为了「用户复制习惯」把 agent 指令改成 PowerShell。
+- 例外只标注不硬转：NFI 官方 `.sh` 属 bash/macOS-Linux 天然用例 → 标注「须 Git Bash 或 macOS/Linux」。
